@@ -1,0 +1,5 @@
+{
+	  "loader": "forge:obj",
+	  "model": "sgcraft_reborn:models/block/stargate_controller.obj",
+	  "flip-v": true
+}

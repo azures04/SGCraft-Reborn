@@ -1,0 +1,26 @@
+{
+	"variants": {
+		"facing=down": {
+			"model": "sgcraft_reborn:block/stargate_block",
+			"x": 180
+		},
+		"facing=east": {
+			"model": "sgcraft_reborn:block/stargate_base",
+			"y": 90
+		},
+		"facing=north": {
+			"model": "sgcraft_reborn:block/stargate_base"
+		},
+		"facing=south": {
+			"model": "sgcraft_reborn:block/stargate_base",
+			"y": 180
+		},
+		"facing=up": {
+			"model": "sgcraft_reborn:block/stargate_block"
+		},
+		"facing=west": {
+			"model": "sgcraft_reborn:block/stargate_base",
+			"y": 270
+		}
+	}
+}

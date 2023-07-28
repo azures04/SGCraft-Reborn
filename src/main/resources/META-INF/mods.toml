@@ -1,0 +1,25 @@
+modLoader="javafml"
+loaderVersion="[36,)"
+license="All rights reserved"
+[[mods]]
+modId="sgcraft_reborn"
+version="${file.jarVersion}"
+displayName="SG-Craft Reborn"
+logoFile="sgcraft_reborn.png"
+credits=""
+authors="Love, Cheese and small house plants"
+description='''
+Ce mod est une reproduction du mod SGCraft pour la version 1.16.5 de minecraft
+'''
+[[dependencies.sgcraft_reborn]]
+    modId="forge"
+    mandatory=true
+    versionRange="[36,)"
+    ordering="NONE"
+    side="BOTH"
+[[dependencies.sgcraft_reborn]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.16.5,1.17)"
+    ordering="NONE"
+    side="BOTH"

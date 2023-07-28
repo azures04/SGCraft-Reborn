@@ -1,0 +1,12 @@
+{
+    "parent": "block/cube_all",
+    "textures": {
+		"down": "sgcraft_reborn:block/stargate_block",
+        "up": "sgcraft_reborn:block/stargate_block",
+        "north": "sgcraft_reborn:block/stargate_ring",
+        "south": "sgcraft_reborn:block/stargate_ring",
+        "west": "sgcraft_reborn:block/stargate_ring",
+        "east": "sgcraft_reborn:block/stargate_ring",
+        "particle": "sgcraft_reborn:block/stargate_ring"
+    }
+}

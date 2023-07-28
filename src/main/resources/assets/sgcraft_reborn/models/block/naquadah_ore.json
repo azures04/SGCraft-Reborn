@@ -1,0 +1,6 @@
+{
+    "parent": "block/cube_all",
+    "textures": {
+        "all": "sgcraft_reborn:block/naquadah_ore"
+    }
+}
