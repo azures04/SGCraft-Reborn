@@ -1,4 +1,4 @@
-package fr.azures.mod.sgcraft_reborn.client.model;
+package fr.azures.mod.sgcraft_reborn.client;
 
 import fr.azures.mod.sgcraft_reborn.registry.ModTilesEntities;
 import fr.azures.mod.sgcraft_reborn.registry.objects.tiles.renderer.StargateControllerTileRenderer;
