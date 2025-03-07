@@ -6,7 +6,7 @@ import net.minecraft.block.material.Material;
 public class NormalBlock extends Block {
 
 	public NormalBlock() {
-        super(Properties.create(Material.ROCK).hardnessAndResistance(5).notSolid());
+        super(Properties.of(Material.STONE).harvestLevel(5).air());
 	}
 
 }

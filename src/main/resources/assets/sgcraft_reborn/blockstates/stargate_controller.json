@@ -1,7 +1,16 @@
 {
     "variants": {
-        "": {
-        	"model": "sgcraft_reborn:block/stargate_controller"
+        "facing=north": {
+            "model": "sgcraft_reborn:block/stargate_controller"
+        },
+        "facing=south": {
+            "model": "sgcraft_reborn:block/stargate_controller"
+        },
+        "facing=west": {
+            "model": "sgcraft_reborn:block/stargate_controller"
+        },
+        "facing=east": {
+            "model": "sgcraft_reborn:block/stargate_controller"
         }
     }
 }

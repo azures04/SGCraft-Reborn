@@ -27,7 +27,7 @@ public class ModBlocks {
 	
 	public static RegistryObject<Block> createBlock(String name, Supplier<? extends Block> supplier) {
 		RegistryObject<Block> block = BLOCKS.register(name, supplier);
-		ModItems.ITEMS.register(name, () -> new BlockItem(block.get(), new Item.Properties().group(SGCraftReborn.SG_CRAFT_TAB)));
+		ModItems.ITEMS.register(name, () -> new BlockItem(block.get(), new Item.Properties().tab(SGCraftReborn.SG_CRAFT_TAB)));
 		return block;
 	}
 	

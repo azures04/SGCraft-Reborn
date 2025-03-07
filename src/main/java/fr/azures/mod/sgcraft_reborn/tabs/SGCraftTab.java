@@ -11,7 +11,7 @@ public class SGCraftTab extends ItemGroup {
 	}
 
 	@Override
-	public ItemStack createIcon() {
+	public ItemStack makeIcon() {
 		return new ItemStack(ModItems.NAQUADAH.get());
 	}
 
