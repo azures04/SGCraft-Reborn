@@ -1,3 +1,6 @@
 {
-	"parent": "block/air"
+	"parent": "block/air",
+	"textures": {
+	    "particle": "sgcraft_reborn:block/controller_side"
+	}
 }

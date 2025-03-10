@@ -1,0 +1,23 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "AAA",
+        "BBB",
+        "CCC"
+    ],
+    "key": {
+        "A": {
+            "item": "minecraft:chiseled_sandstone"
+        },
+        "B": {
+            "item": "sgcraft_reborn:naquadah_ingot"
+        },
+        "C": {
+            "item": "minecraft:smooth_sandstone"
+        }
+    },
+    "result": {
+        "item": "sgcraft_reborn:stargate_ring",
+        "count": 1
+    }
+}

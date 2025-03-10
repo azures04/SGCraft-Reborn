@@ -1,0 +1,20 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        " AA",
+        "AB ",
+        "A  "
+    ],
+    "key": {
+        "A": {
+            "item": "minecraft:iron_ingot"
+        },
+        "B": {
+            "item": "minecraft:charcoal"
+        }
+    },
+    "result": {
+        "item": "sgcraft_reborn:sg_iris_blade",
+        "count": 1
+    }
+}

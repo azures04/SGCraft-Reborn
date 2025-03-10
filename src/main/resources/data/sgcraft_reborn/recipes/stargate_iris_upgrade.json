@@ -1,0 +1,20 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "AAA",
+        "ABA",
+        "AAA"
+    ],
+    "key": {
+        "A": {
+            "item": "sgcraft_reborn:sg_iris_blade"
+        },
+        "B": {
+            "item": "minecraft:redstone"
+        }
+    },
+    "result": {
+        "item": "sgcraft_reborn:sg_iris_upgrade",
+        "count": 1
+    }
+}

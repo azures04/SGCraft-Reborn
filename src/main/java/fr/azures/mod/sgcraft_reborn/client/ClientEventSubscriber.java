@@ -1,6 +1,7 @@
 package fr.azures.mod.sgcraft_reborn.client;
 
 import fr.azures.mod.sgcraft_reborn.registry.ModTilesEntities;
+import fr.azures.mod.sgcraft_reborn.registry.objects.tiles.renderer.StargateBaseTileRenderer;
 import fr.azures.mod.sgcraft_reborn.registry.objects.tiles.renderer.StargateControllerTileRenderer;
 import fr.azures.mod.sgcraft_reborn.utils.Constants;
 import net.minecraftforge.api.distmarker.Dist;
@@ -14,5 +15,6 @@ public class ClientEventSubscriber {
     @SubscribeEvent
     public static void onRegisterModels(ModelRegistryEvent event) {
         ClientRegistry.bindTileEntityRenderer(ModTilesEntities.STARGATE_CONTROLLER.get(), StargateControllerTileRenderer::new);
+        ClientRegistry.bindTileEntityRenderer(ModTilesEntities.STARGATE_BASE.get(), StargateBaseTileRenderer::new);
     }
 }

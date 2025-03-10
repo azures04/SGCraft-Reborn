@@ -1,0 +1,12 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "ingredients": [
+        {
+            "item": "sgcraft_reborn:naquadah_block"
+        }
+    ],
+    "result": {
+        "item": "sgcraft_reborn:naquadah_ingot",
+        "count": 9
+    }
+}

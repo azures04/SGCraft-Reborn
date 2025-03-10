@@ -1,0 +1,29 @@
+{
+    "type": "minecraft:crafting_shaped",
+	"conditions": [
+		{
+			"type": "sgcraft_reborn:optionals_recipes",
+			"configKey": "allowCraftingCrystals"
+		}
+	],
+    "pattern": [
+        "AAB",
+        "BCA",
+        "ABA"
+    ],
+    "key": {
+        "A": {
+            "item": "minecraft:lapis_lazuli"
+        },
+        "B": {
+            "item": "minecraft:redstone"
+        },
+        "C": {
+            "item": "minecraft:diamond"
+        }
+    },
+    "result": {
+        "item": "sgcraft_reborn:sg_core_crystal",
+        "count": 1
+    }
+}

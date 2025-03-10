@@ -1,5 +1,6 @@
 package fr.azures.mod.sgcraft_reborn.registry;
 
+import fr.azures.mod.sgcraft_reborn.registry.objects.tiles.StargateBaseTile;
 import fr.azures.mod.sgcraft_reborn.registry.objects.tiles.StargateControllerTile;
 import fr.azures.mod.sgcraft_reborn.utils.Constants;
 import net.minecraft.tileentity.TileEntityType;
@@ -14,5 +15,8 @@ public class ModTilesEntities {
 	
     public static final RegistryObject<TileEntityType<StargateControllerTile>> STARGATE_CONTROLLER = TILE_ENTITY_TYPES
     		.register("stargate_controller_tile", () -> TileEntityType.Builder.of(StargateControllerTile::new, ModBlocks.STARGATE_CONTROLLER.get()).build(null));
+
+    public static final RegistryObject<TileEntityType<StargateBaseTile>> STARGATE_BASE = TILE_ENTITY_TYPES
+    		.register("stargate_base_tile", () -> TileEntityType.Builder.of(StargateBaseTile::new, ModBlocks.STARGATE_BASE.get()).build(null));
     
 }

@@ -1,0 +1,26 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "A A",
+        "BDB",
+        "C C"
+    ],
+    "key": {
+        "A": {
+            "item": "minecraft:glowstone_dust"
+        },
+        "B": {
+            "item": "minecraft:ender_pearl"
+        },
+        "C": {
+            "item": "minecraft:redstone"
+        },
+		"D": {
+		    "item": "sgcraft_reborn:naquadah_ingot"
+		}
+    },
+    "result": {
+        "item": "sgcraft_reborn:sg_chevron_upgrade",
+        "count": 1
+    }
+}

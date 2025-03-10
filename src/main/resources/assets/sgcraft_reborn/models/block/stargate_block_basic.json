@@ -1,0 +1,10 @@
+{
+	"parent": "block/cube_all",
+	"textures": {
+	    "top": "sgcraft_reborn:block/controller_top",
+	    "front": "sgcraft_reborn:block/controller_front",
+	    "side": "sgcraft_reborn:block/controller_side",
+		"top": "sgcraft_reborn:block/controller_bottom",
+	    "particle": "sgcraft_reborn:block/controller_side"
+	}
+}

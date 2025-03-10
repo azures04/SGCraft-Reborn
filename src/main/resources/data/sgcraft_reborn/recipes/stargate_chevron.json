@@ -1,0 +1,32 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "ADA",
+        "BEB",
+        "CFC"
+    ],
+    "key": {
+        "A": {
+            "item": "minecraft:chiseled_sandstone"
+        },
+        "B": {
+            "item": "sgcraft_reborn:naquadah_ingot"
+        },
+        "C": {
+            "item": "minecraft:smooth_sandstone"
+        },
+		"D": {
+		    "item": "minecraft:glowstone_dust"
+		},
+		"E": {
+		    "item": "minecraft:ender_pearl"
+		},
+		"F": {
+		    "item": "minecraft:redstone"
+		}
+    },
+    "result": {
+        "item": "sgcraft_reborn:stargate_chevron",
+        "count": 1
+    }
+}

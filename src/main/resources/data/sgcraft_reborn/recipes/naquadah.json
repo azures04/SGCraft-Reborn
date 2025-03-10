@@ -1,0 +1,29 @@
+{
+    "type": "minecraft:crafting_shaped",
+	"conditions": [
+		{
+			"type": "sgcraft_reborn:optionals_recipes",
+			"configKey": "allowCraftingNaquadah"
+		}
+	],
+    "pattern": [
+        "ABC",
+        "   ",
+        "   "
+    ],
+    "key": {
+        "A": {
+            "item": "minecraft:coal"
+        },
+        "B": {
+            "item": "minecraft:slime_ball"
+        },
+        "C": {
+            "item": "minecraft:blaze_powder"
+        }
+    },
+    "result": {
+        "item": "sgcraft_reborn:naquadah",
+        "count": 1
+    }
+}

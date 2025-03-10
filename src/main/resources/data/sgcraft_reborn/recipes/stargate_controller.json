@@ -1,0 +1,26 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "AAA",
+        "BCB",
+        "BDB"
+    ],
+    "key": {
+        "A": {
+            "item": "minecraft:stone_button"
+        },
+        "B": {
+            "item": "minecraft:obsidian"
+        },
+        "C": {
+            "item": "minecraft:ender_pearl"
+        },
+		"D": {
+            "item": "sgcraft_reborn:sg_controller_crystal"
+        }
+    },
+    "result": {
+        "item": "sgcraft_reborn:stargate_controller",
+        "count": 1
+    }
+}

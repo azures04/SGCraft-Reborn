@@ -13,10 +13,10 @@ public class ModItems {
 
 	public static final RegistryObject<Item> NAQUADAH = ITEMS.register("naquadah", () -> new Item(new Item.Properties().tab(SGCraftReborn.SG_CRAFT_TAB)));
 	public static final RegistryObject<Item> NAQUADAH_NNGOT = ITEMS.register("naquadah_ingot", () -> new Item(new Item.Properties().tab(SGCraftReborn.SG_CRAFT_TAB)));
-	public static final RegistryObject<Item> SG_CHEVRON_UPDATE = ITEMS.register("sg_chevron_upgrade", () -> new Item(new Item.Properties().tab(SGCraftReborn.SG_CRAFT_TAB)));
+	public static final RegistryObject<Item> SG_CHEVRON_UPGRADE = ITEMS.register("sg_chevron_upgrade", () -> new Item(new Item.Properties().tab(SGCraftReborn.SG_CRAFT_TAB)));
 	public static final RegistryObject<Item> SG_CONTROLLER_CRYSTALL = ITEMS.register("sg_controller_crystal", () -> new Item(new Item.Properties().tab(SGCraftReborn.SG_CRAFT_TAB)));
 	public static final RegistryObject<Item> SG_CORE_CRYSTAL = ITEMS.register("sg_core_crystal", () -> new Item(new Item.Properties().tab(SGCraftReborn.SG_CRAFT_TAB)));
 	public static final RegistryObject<Item> SG_IRIS_BLADE = ITEMS.register("sg_iris_blade", () -> new Item(new Item.Properties().tab(SGCraftReborn.SG_CRAFT_TAB)));
-	public static final RegistryObject<Item> SG_IRIS_UPDATE = ITEMS.register("sg_iris_upgrade", () -> new Item(new Item.Properties().tab(SGCraftReborn.SG_CRAFT_TAB)));
+	public static final RegistryObject<Item> SG_IRIS_UPGRADE = ITEMS.register("sg_iris_upgrade", () -> new Item(new Item.Properties().tab(SGCraftReborn.SG_CRAFT_TAB)));
 	
 }

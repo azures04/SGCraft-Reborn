@@ -1,0 +1,17 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "AAA",
+        "AAA",
+        "AAA"
+    ],
+    "key": {
+        "A": {
+            "item": "sgcraft_reborn:naquadah_ingot"
+        }
+    },
+    "result": {
+        "item": "sgcraft_reborn:naquadah_block",
+        "count": 1
+    }
+}

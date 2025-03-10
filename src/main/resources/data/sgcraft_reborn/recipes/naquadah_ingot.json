@@ -1,0 +1,15 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "ingredients": [
+        {
+            "item": "minecraft:iron_ingot"
+        },
+        {
+            "item": "sgcraft_reborn:naquadah"
+        }
+    ],
+    "result": {
+        "item": "sgcraft_reborn:naquadah_ingot",
+        "count": 1
+    }
+}

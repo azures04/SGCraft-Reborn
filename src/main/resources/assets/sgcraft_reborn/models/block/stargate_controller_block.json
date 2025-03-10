@@ -1,0 +1,10 @@
+{
+    "parent": "block/orientable",
+    "textures": {
+	    "top": "sgcraft_reborn:block/controller_top",
+		"side": "sgcraft_reborn:block/controller_side",
+		"front": "sgcraft_reborn:block/controller_side",
+		"bottom": "sgcraft_reborn:block/controller_bottom",
+        "particle": "sgcraft_reborn:block/controller_side"
+    }
+}
