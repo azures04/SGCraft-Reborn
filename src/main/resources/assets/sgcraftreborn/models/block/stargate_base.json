@@ -1,0 +1,9 @@
+{
+    "parent": "block/orientable",
+    "textures": {
+	    "top": "sgcraftreborn:blocks/stargate_block",
+	    "front": "sgcraftreborn:blocks/stargate_base",
+	    "side": "sgcraftreborn:blocks/stargate_ring",
+        "particle": "sgcraftreborn:blocks/stargate_base"
+    }
+}

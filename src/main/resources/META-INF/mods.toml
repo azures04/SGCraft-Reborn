@@ -1,0 +1,30 @@
+modLoader="javafml"
+loaderVersion="[25,)"
+issueTrackerURL="https://github.com/Azures04/SGCraft-Reborn/issues"
+
+[[mods]]
+modId="sgcraftreborn"
+version="${file.jarVersion}"
+displayName="SGCraft Reborn"
+updateJSONURL="http://myurl.me/"
+displayURL="https://github.com/Azures04/SGCraft-Reborn"
+logoFile=""
+credits="Thanks for Greg Ewing"
+authors="Azures04"
+description='''
+SGCraft Legacy re implemented in 1.13.2
+'''
+versionCheck=false
+[[dependencies.sgcraftreborn]]
+    modId="forge"
+    mandatory=true
+    versionRange="[25,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.sgcraftreborn]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.13.2]"
+    ordering="NONE"
+    side="BOTH"
