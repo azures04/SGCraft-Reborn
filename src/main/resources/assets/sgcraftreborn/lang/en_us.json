@@ -1,0 +1,16 @@
+{
+    "itemGroup.sgcraftreborn": "SGCraft Reborn",
+    "block.sgcraftreborn.stargate_base": "Stargate Base",
+    "block.sgcraftreborn.stargate_chevron": "Stargate Chevron",
+    "block.sgcraftreborn.stargate_ring": "Stargate Ring",
+    "block.sgcraftreborn.naquadah_block": "Naquadah Alloy Block",
+    "block.sgcraftreborn.naquadah_ore": "Naquadah Ore",
+    "block.sgcraftreborn.stargate_controller": "Stargate Controller",
+    "item.sgcraftreborn.stargate_iris_blade": "Iris Blade",
+    "item.sgcraftreborn.stargate_iris_upgrade": "Iris Upgrade",
+    "item.sgcraftreborn.stargate_chevron_upgrade": "Chevron Upgrade",
+    "item.sgcraftreborn.naquadah_ingot": "Naquadah Alloy Ingot",
+    "item.sgcraftreborn.naquadah": "Naquadah",
+    "item.sgcraftreborn.stargate_core_crystal": "Stargate Core Crystal",
+    "item.sgcraftreborn.stargate_controller_crystal": "Stargate Controller Crystal"
+}

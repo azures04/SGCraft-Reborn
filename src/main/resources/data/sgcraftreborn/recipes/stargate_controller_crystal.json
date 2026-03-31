@@ -1,0 +1,29 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "conditions": [
+        {
+            "type": "sgcraftreborn:config",
+            "key": "allowCraftingCrystals"
+        }
+    ],
+    "pattern": [
+        "#OO",
+        "OD#",
+        "OO#"
+    ],
+    "key": {
+        "#": {
+            "item": "minecraft:redstone"
+        },
+        "O": {
+            "item": "minecraft:orange_dye"
+        },
+        "D": {
+            "item": "minecraft:diamond"
+        }
+    },
+    "result": {
+        "item": "sgcraftreborn:stargate_controller_crystal",
+        "count": 1
+    }
+}

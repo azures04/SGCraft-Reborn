@@ -1,0 +1,32 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "#R#",
+        "sEs",
+        "CSC"
+    ],
+    "key": {
+        "#": {
+            "item": "minecraft:chiseled_sandstone"
+        },
+        "R": {
+            "item": "minecraft:redstone"
+        },
+        "s": {
+            "item": "sgcraftreborn:naquadah_ingot"
+        },
+        "E": {
+            "item": "minecraft:ender_eye"
+        },
+        "C": {
+            "item": "minecraft:cut_sandstone"
+        },
+        "S": {
+            "item": "sgcraftreborn:stargate_core_crystal"
+        }
+    },
+    "result": {
+        "item": "sgcraftreborn:stargate_base",
+        "count": 1
+    }
+}

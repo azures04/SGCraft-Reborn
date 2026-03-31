@@ -24,12 +24,12 @@ public class ModBlocks {
     public static final Block STARGATE_CONTROLLER;
 
     static {
-        NAQUADAH_ORE = register("naquadah_ore", new Block(Block.Properties.create(Material.IRON)));
-        NAQUADAH_BLOCK = register("naquadah_block", new Block(Block.Properties.create(Material.IRON)));
         STARGATE_RING = register("stargate_ring", new StargateGenericBlock(Block.Properties.create(Material.IRON)));
         STARGATE_CHEVRON = register("stargate_chevron", new StargateGenericBlock(Block.Properties.create(Material.IRON)));
         STARGATE_BASE = register("stargate_base", new StargateBaseBlock(Block.Properties.create(Material.IRON)));
         STARGATE_CONTROLLER = register("stargate_controller", new StargateControllerBlock(Block.Properties.create(Material.IRON)));
+        NAQUADAH_ORE = register("naquadah_ore", new Block(Block.Properties.create(Material.IRON)));
+        NAQUADAH_BLOCK = register("naquadah_block", new Block(Block.Properties.create(Material.IRON)));
     }
 
     private static <T extends Block> T register(String name, T block) {

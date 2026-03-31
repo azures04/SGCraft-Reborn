@@ -1,0 +1,29 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "conditions": [
+        {
+            "type": "sgcraftreborn:config",
+            "key": "allowCraftingCrystals"
+        }
+    ],
+    "pattern": [
+        "##R",
+        "RD#",
+        "#R#"
+    ],
+    "key": {
+        "#": {
+            "item": "minecraft:lapis_lazuli"
+        },
+        "R": {
+            "item": "minecraft:redstone"
+        },
+        "D": {
+            "item": "minecraft:diamond"
+        }
+    },
+    "result": {
+        "item": "sgcraftreborn:stargate_core_crystal",
+        "count": 1
+    }
+}

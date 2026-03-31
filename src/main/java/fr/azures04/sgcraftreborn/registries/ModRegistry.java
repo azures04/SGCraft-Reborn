@@ -1,12 +1,7 @@
 package fr.azures04.sgcraftreborn.registries;
 
-import fr.azures04.sgcraftreborn.Constants;
 import fr.azures04.sgcraftreborn.client.models.ISpecialItemRenderer;
-import fr.azures04.sgcraftreborn.registries.blocks.StargateBaseBlock;
-import fr.azures04.sgcraftreborn.registries.blocks.StargateControllerBlock;
-import fr.azures04.sgcraftreborn.registries.tiles.StargateControllerTileEntity;
 import net.minecraft.block.Block;
-import net.minecraft.block.material.Material;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemGroup;
@@ -15,25 +10,22 @@ import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.registries.IForgeRegistry;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class ModRegistry {
 
     @SubscribeEvent
     public static void onBlocksRegistry(final RegistryEvent.Register<Block> event) {
         IForgeRegistry<Block> registry = event.getRegistry();
-        for (Block block : ModBlocks.BLOCKS_TO_REGISTER) {
-            registry.register(block);
-        }
+        ModBlocks.BLOCKS_TO_REGISTER.forEach(event.getRegistry()::register);
     }
 
     @SubscribeEvent
     public static void onItemsRegistry(final RegistryEvent.Register<Item> event) {
         IForgeRegistry<Item> registry = event.getRegistry();
 
+        ModItems.ITEMS_TO_REGISTER.forEach(event.getRegistry()::register);
+
         for (Block block : ModBlocks.BLOCKS_TO_REGISTER) {
-            Item.Properties properties = new Item.Properties().group(ItemGroup.MISC);
+            Item.Properties properties = new Item.Properties().group(ModItemGroups.SGCRAFT_REBORN);
             if (block instanceof ISpecialItemRenderer) {
                 properties = properties.setTEISR(((ISpecialItemRenderer) block)::getISTER);
             }

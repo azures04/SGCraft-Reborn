@@ -9,10 +9,10 @@ displayName="SGCraft Reborn"
 updateJSONURL="http://myurl.me/"
 displayURL="https://github.com/Azures04/SGCraft-Reborn"
 logoFile=""
-credits="Thanks for Greg Ewing"
-authors="Azures04"
+credits="Greg Ewing"
+authors="Azures04, "
 description='''
-SGCraft Legacy re implemented in 1.13.2
+SG-1 Stargates and other stuff.
 '''
 versionCheck=false
 [[dependencies.sgcraftreborn]]
