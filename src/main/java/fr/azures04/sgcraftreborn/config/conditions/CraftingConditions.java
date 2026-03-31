@@ -2,7 +2,7 @@ package fr.azures04.sgcraftreborn.config.conditions;
 
 import com.google.gson.JsonObject;
 import fr.azures04.sgcraftreborn.Constants;
-import fr.azures04.sgcraftreborn.config.SGCraftConfig;
+import fr.azures04.sgcraftreborn.config.SGCraftRebornConfig;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.crafting.IConditionSerializer;
 
@@ -17,9 +17,9 @@ public class CraftingConditions implements IConditionSerializer {
         String key = json.get("key").getAsString();
         switch (key) {
             case "allowCraftingCrystals":
-                return () -> SGCraftConfig.ALLOW_CRAFTING_CRYSTALS.get();
+                return () -> SGCraftRebornConfig.ALLOW_CRAFTING_CRYSTALS.get();
             case "allowCraftingNaquadah":
-                return () -> SGCraftConfig.ALLOW_CRAFTING_NAQUADAH.get();
+                return () -> SGCraftRebornConfig.ALLOW_CRAFTING_NAQUADAH.get();
             default:
                 return () -> false;
         }

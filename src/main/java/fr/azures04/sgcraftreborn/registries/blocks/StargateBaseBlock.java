@@ -1,5 +1,6 @@
 package fr.azures04.sgcraftreborn.registries.blocks;
 
+import fr.azures04.sgcraftreborn.registries.structures.StargateStructure;
 import fr.azures04.sgcraftreborn.registries.tiles.StargateBaseTileEntity;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
@@ -12,13 +13,14 @@ import net.minecraft.util.BlockRenderLayer;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockReader;
+import net.minecraft.world.IWorldReader;
 
 import javax.annotation.Nullable;
 import java.util.concurrent.Callable;
 
 public class StargateBaseBlock extends Block {
 
-    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
+    public static final DirectionProperty FACING = BlockStateProperties.FACING;
 
     public StargateBaseBlock(Properties properties) {
         super(properties);
@@ -63,7 +65,12 @@ public class StargateBaseBlock extends Block {
 
     @Override
     public IBlockState getStateForPlacement(BlockItemUseContext context) {
-        return (IBlockState) this.getDefaultState().with(FACING, context.getPlacementHorizontalFacing());
+        return (IBlockState) this.getDefaultState().with(FACING, context.getNearestLookingDirection().getOpposite());
     }
 
+    @Override
+    public void onNeighborChange(IBlockState state, IWorldReader world, BlockPos pos, BlockPos neighbor) {
+        boolean x = StargateStructure.checkStructure(world, pos, state.get(FACING));
+        System.out.println(x);
+    }
 }

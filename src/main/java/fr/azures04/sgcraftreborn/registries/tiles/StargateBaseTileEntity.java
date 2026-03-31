@@ -13,4 +13,5 @@ public class StargateBaseTileEntity extends TileEntity {
     public StargateBaseTileEntity(TileEntityType<?> tileEntityTypeIn) {
         super(tileEntityTypeIn);
     }
+
 }
