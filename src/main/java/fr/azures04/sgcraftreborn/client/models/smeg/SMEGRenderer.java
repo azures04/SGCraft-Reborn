@@ -1,4 +1,4 @@
-package fr.azures04.sgcraftreborn.client.models;
+package fr.azures04.sgcraftreborn.client.models.smeg;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;

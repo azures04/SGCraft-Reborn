@@ -1,9 +1,9 @@
 package fr.azures04.sgcraftreborn.client.models.tiles.items;
 
 import fr.azures04.sgcraftreborn.Constants;
-import fr.azures04.sgcraftreborn.client.models.SMEGLoader;
-import fr.azures04.sgcraftreborn.client.models.SMEGModel;
-import fr.azures04.sgcraftreborn.client.models.SMEGRenderer;
+import fr.azures04.sgcraftreborn.client.models.smeg.SMEGLoader;
+import fr.azures04.sgcraftreborn.client.models.smeg.SMEGModel;
+import fr.azures04.sgcraftreborn.client.models.smeg.SMEGRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityItemStackRenderer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumFacing;

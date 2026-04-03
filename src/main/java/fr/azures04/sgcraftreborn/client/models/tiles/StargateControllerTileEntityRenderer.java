@@ -1,9 +1,9 @@
 package fr.azures04.sgcraftreborn.client.models.tiles;
 
 import fr.azures04.sgcraftreborn.Constants;
-import fr.azures04.sgcraftreborn.client.models.SMEGLoader;
-import fr.azures04.sgcraftreborn.client.models.SMEGModel;
-import fr.azures04.sgcraftreborn.client.models.SMEGRenderer;
+import fr.azures04.sgcraftreborn.client.models.smeg.SMEGLoader;
+import fr.azures04.sgcraftreborn.client.models.smeg.SMEGModel;
+import fr.azures04.sgcraftreborn.client.models.smeg.SMEGRenderer;
 import fr.azures04.sgcraftreborn.registries.blocks.StargateControllerBlock;
 import fr.azures04.sgcraftreborn.registries.tiles.StargateControllerTileEntity;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;

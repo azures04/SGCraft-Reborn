@@ -1,4 +1,4 @@
-package fr.azures04.sgcraftreborn.client.models;
+package fr.azures04.sgcraftreborn.client.models.smeg;
 
 import com.google.gson.Gson;
 import fr.azures04.sgcraftreborn.SGCraftReborn;

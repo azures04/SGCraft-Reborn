@@ -1,4 +1,4 @@
-package fr.azures04.sgcraftreborn.client.models;
+package fr.azures04.sgcraftreborn.client.models.smeg;
 
 import fr.azures04.sgcraftreborn.exceptions.MalformedSMEGException;
 import net.minecraft.util.ResourceLocation;
@@ -12,9 +12,9 @@ public class SMEGModel {
     public Face[] faces;
 
     public static class Face {
-        int texture;
-        double[][] vertices;
-        int[][] triangles;
+        public int texture;
+        public double[][] vertices;
+        public int[][] triangles;
     }
 
     public AxisAlignedBB getBounds() {
