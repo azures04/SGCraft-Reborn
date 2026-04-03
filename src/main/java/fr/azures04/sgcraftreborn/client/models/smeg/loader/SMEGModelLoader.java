@@ -1,5 +1,7 @@
 package fr.azures04.sgcraftreborn.client.models.smeg.loader;
 
+import fr.azures04.sgcraftreborn.client.models.smeg.SMEGLoader;
+import fr.azures04.sgcraftreborn.client.models.smeg.SMEGModel;
 import net.minecraft.client.renderer.model.IUnbakedModel;
 import net.minecraft.resources.IResourceManager;
 import net.minecraft.util.ResourceLocation;
@@ -28,6 +30,11 @@ public class SMEGModelLoader implements ICustomModelLoader {
 
     @Override
     public IUnbakedModel loadModel(ResourceLocation modelLocation) throws Exception {
-        return null;
+        ResourceLocation smegLocation = new ResourceLocation(
+                modelLocation.getNamespace(),
+                "models/" + modelLocation.getPath() + ".smeg"
+        );
+        SMEGModel model = SMEGLoader.load(smegLocation);
+        return new SMEGUnbakedModel(model);
     }
 }

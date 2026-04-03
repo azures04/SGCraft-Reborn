@@ -19,7 +19,7 @@ public class SMEGUnbakedModel implements IUnbakedModel {
 
     private final SMEGModel model;
 
-    private SMEGUnbakedModel(SMEGModel model) {
+    public SMEGUnbakedModel(SMEGModel model) {
         this.model = model;
     }
 

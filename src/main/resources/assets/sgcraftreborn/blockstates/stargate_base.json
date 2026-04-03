@@ -1,26 +1,26 @@
 {
     "variants": {
         "facing=north": {
-            "model": "sgcraftreborn:block/stargate_base"
+            "model": "sgcraftreborn:block/dhd.smeg"
         },
         "facing=south": {
-            "model": "sgcraftreborn:block/stargate_base",
+            "model": "sgcraftreborn:block/dhd.smeg",
             "y": 180
         },
         "facing=west": {
-            "model": "sgcraftreborn:block/stargate_base",
+            "model": "sgcraftreborn:block/dhd.smeg",
             "y": 270
         },
         "facing=east": {
-            "model": "sgcraftreborn:block/stargate_base",
+            "model": "sgcraftreborn:block/dhd.smeg",
             "y": 90
         },
         "facing=up": {
-            "model": "sgcraftreborn:block/stargate_base",
+            "model": "sgcraftreborn:block/dhd.smeg",
             "x": 270
         },
         "facing=down": {
-            "model": "sgcraftreborn:block/stargate_base",
+            "model": "sgcraftreborn:block/dhd.smeg",
             "x": 90
         }
     }

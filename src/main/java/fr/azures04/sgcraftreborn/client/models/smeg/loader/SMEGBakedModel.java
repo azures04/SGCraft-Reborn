@@ -33,6 +33,7 @@ public class SMEGBakedModel implements IBakedModel {
 
     @Override
     public List<BakedQuad> getQuads(@Nullable IBlockState state, @Nullable EnumFacing side, Random rand) {
+        if (side != null) return Collections.emptyList();
         VertexFormat format = DefaultVertexFormats.BLOCK;
         List<BakedQuad> quads = new ArrayList<BakedQuad>();
         for (int i = 0; i < model.faces.length; i++) {
@@ -40,17 +41,25 @@ public class SMEGBakedModel implements IBakedModel {
             Minecraft.getInstance().getTextureManager().bindTexture(model.getTexture(face.texture));
             for (int j = 0; j < face.triangles.length; j++) {
                 int[] triangle = face.triangles[j];
+                TextureAtlasSprite sprite = spriteGetter.apply(model.getTexture(face.texture));
+
+                UnpackedBakedQuad.Builder builder = new UnpackedBakedQuad.Builder(format);
+                builder.setTexture(sprite);
+
                 for (int k = 0; k < 3; k++) {
                     int vertexIndex = triangle[k];
                     double[] vertex = face.vertices[vertexIndex];
-                    UnpackedBakedQuad.Builder builder = new UnpackedBakedQuad.Builder(format);
-                    BakedQuad quad = builder.build();
                     builder.put(0, (float) vertex[0], (float) vertex[1], (float) vertex[2], 1.0f);
-                    builder.put(1, (float) vertex[6], (float) vertex[7]);
+                    builder.put(1, sprite.getInterpolatedU(vertex[6] * 16), sprite.getInterpolatedV(vertex[7] * 16), 0, 0);
                     builder.put(2, (float) vertex[3], (float) vertex[4], (float) vertex[5], 0);
-                    builder.put(2, (float) vertex[3], (float) vertex[4], (float) vertex[5], 0);
-                    quads.add(quad);
                 }
+
+                double[] last = face.vertices[triangle[2]];
+                builder.put(0, (float) last[0], (float) last[1], (float) last[2], 1.0f);
+                builder.put(1, sprite.getInterpolatedU(last[6] * 16), sprite.getInterpolatedV(last[7] * 16), 0, 0);
+                builder.put(2, (float) last[3], (float) last[4], (float) last[5], 0);
+
+                quads.add(builder.build());
             }
         }
         return quads;
@@ -73,11 +82,11 @@ public class SMEGBakedModel implements IBakedModel {
 
     @Override
     public TextureAtlasSprite getParticleTexture() {
-        return null;
+        return spriteGetter.apply(model.getTexture(0));
     }
 
     @Override
     public ItemOverrideList getOverrides() {
-        return null;
+        return ItemOverrideList.EMPTY;
     }
 }
