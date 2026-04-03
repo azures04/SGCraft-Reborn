@@ -1,11 +1,13 @@
 package fr.azures04.sgcraftreborn.registries;
 
 import fr.azures04.sgcraftreborn.client.models.ISpecialItemRenderer;
+import fr.azures04.sgcraftreborn.client.models.smeg.loader.SMEGModelLoader;
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
-import net.minecraft.item.ItemGroup;
 import net.minecraft.tileentity.TileEntityType;
+import net.minecraftforge.client.event.ModelRegistryEvent;
+import net.minecraftforge.client.model.ModelLoaderRegistry;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.registries.IForgeRegistry;

@@ -8,16 +8,23 @@ import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.EnumFacing;
 import org.lwjgl.opengl.GL11;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class SMEGRenderer {
 
     public static void render(SMEGModel model, double x, double y, double z) {
+        render(model, x, y, z, new HashMap<>());
+    }
+
+    public static void render(SMEGModel model, double x, double y, double z, Map<String, String> state) {
         Tessellator tess = Tessellator.getInstance();
         BufferBuilder buf = tess.getBuffer();
 
         for (int i = 0; i < model.faces.length; i++) {
             buf.begin(GL11.GL_TRIANGLES, DefaultVertexFormats.POSITION_TEX_NORMAL);
             SMEGModel.Face face = model.faces[i];
-            Minecraft.getInstance().getTextureManager().bindTexture(model.getTexture(face.texture));
+            Minecraft.getInstance().getTextureManager().bindTexture(model.getTexture(face.texture, state));
             for (int j = 0; j < face.triangles.length; j++) {
                 int[] triangle = face.triangles[j];
                 for (int k = 0; k < 3; k++) {
@@ -35,10 +42,14 @@ public class SMEGRenderer {
     }
 
     public static void renderWithRotation(SMEGModel model, double x, double y, double z, EnumFacing facing) {
+        renderWithRotation(model, x, y, z, facing, new HashMap<>());
+    }
+
+    public static void renderWithRotation(SMEGModel model, double x, double y, double z, EnumFacing facing, Map<String, String> state) {
         GlStateManager.pushMatrix();
         GlStateManager.translated(x + 0.5, y + 0.5, z + 0.5);
         GlStateManager.rotatef(getAngleFromFacing(facing), 0, 1, 0);
-        render(model, -0.5, -0.5, -0.5);
+        render(model, -0.5, -0.5, -0.5, state);
         GlStateManager.popMatrix();
     }
     private static float getAngleFromFacing(EnumFacing facing) {

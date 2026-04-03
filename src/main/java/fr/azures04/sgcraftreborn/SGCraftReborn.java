@@ -1,12 +1,10 @@
 package fr.azures04.sgcraftreborn;
 
-import fr.azures04.sgcraftreborn.client.models.smeg.loader.SMEGModelLoader;
 import fr.azures04.sgcraftreborn.client.models.tiles.StargateControllerTileEntityRenderer;
 import fr.azures04.sgcraftreborn.config.SGCraftRebornConfig;
 import fr.azures04.sgcraftreborn.config.conditions.CraftingConditions;
 import fr.azures04.sgcraftreborn.registries.ModRegistry;
 import fr.azures04.sgcraftreborn.registries.tiles.StargateControllerTileEntity;
-import net.minecraftforge.client.model.ModelLoaderRegistry;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.crafting.CraftingHelper;
 import net.minecraftforge.fml.ModLoadingContext;
@@ -38,7 +36,6 @@ public class SGCraftReborn {
     }
 
     private void clientSetup(final FMLClientSetupEvent event) {
-        ModelLoaderRegistry.registerLoader(new SMEGModelLoader());
         ClientRegistry.bindTileEntitySpecialRenderer(StargateControllerTileEntity.class, new StargateControllerTileEntityRenderer());
     }
 }

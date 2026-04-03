@@ -1,12 +1,18 @@
 package fr.azures04.sgcraftreborn.client.models.smeg;
 
 import fr.azures04.sgcraftreborn.exceptions.MalformedSMEGException;
+import net.minecraft.block.state.IBlockState;
+import net.minecraft.state.IProperty;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.AxisAlignedBB;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class SMEGModel {
 
     public String[] textures;
+    public Map<String, Map<String, String>> overrides;
     public double[] bounds;
     public double[][] boxes;
     public Face[] faces;
@@ -48,5 +54,38 @@ public class SMEGModel {
             return new ResourceLocation("minecraft", "missingno");
         }
         return new ResourceLocation(textures[index]);
+    }
+
+    public ResourceLocation getTexture(int index, Map<String, String> currentState) {
+        for (Map.Entry<String, Map<String, String>> override : overrides.entrySet()) {
+            if (matchesState(override.getKey(), currentState)) {
+                Map<String, String> overrideTextures = override.getValue();
+                String indexStr = String.valueOf(index);
+                if (overrideTextures.containsKey(indexStr)) {
+                    return new ResourceLocation(overrideTextures.get(indexStr));
+                }
+            }
+        }
+        return getTexture(index);
+    }
+
+    private boolean matchesState(String condition, Map<String, String> currentState) {
+        for (String part : condition.split(",")) {
+            String[] kv = part.split("=");
+            if (!currentState.getOrDefault(kv[0], "").equals(kv[1])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static class BlockStateParser {
+        public static Map<String, String> fromBlockState(IBlockState state) {
+            Map<String, String> result = new HashMap<>();
+            for (Map.Entry<IProperty<?>, Comparable<?>> entry : state.getValues().entrySet()) {
+                result.put(entry.getKey().getName(), entry.getValue().toString());
+            }
+            return result;
+        }
     }
 }
