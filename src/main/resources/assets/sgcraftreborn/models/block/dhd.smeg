@@ -5,6 +5,14 @@
         "sgcraftreborn:textures/blocks/dhd_detail.png",
         "sgcraftreborn:textures/blocks/dhd_button_dim.png"
     ],
+    "overrides": {
+        "status=unlinked": {
+            "3": "sgcraftreborn:textures/blocks/dhd_button_dim_default.png"
+        },
+        "status=activated": {
+            "3": "sgcraftreborn:textures/blocks/dhd_button_dim_activated.png"
+        }
+    },
     "bounds": [
         -0.6875,
         0,

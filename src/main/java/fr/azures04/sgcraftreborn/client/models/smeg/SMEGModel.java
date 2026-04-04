@@ -3,6 +3,7 @@ package fr.azures04.sgcraftreborn.client.models.smeg;
 import fr.azures04.sgcraftreborn.exceptions.MalformedSMEGException;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.state.IProperty;
+import net.minecraft.util.IStringSerializable;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.AxisAlignedBB;
 
@@ -72,7 +73,9 @@ public class SMEGModel {
     private boolean matchesState(String condition, Map<String, String> currentState) {
         for (String part : condition.split(",")) {
             String[] kv = part.split("=");
-            if (!currentState.getOrDefault(kv[0], "").equals(kv[1])) {
+            String key = kv[0].trim();
+            String value = kv[1].trim();
+            if (!currentState.getOrDefault(key, "").equals(value)) {
                 return false;
             }
         }
@@ -83,7 +86,11 @@ public class SMEGModel {
         public static Map<String, String> fromBlockState(IBlockState state) {
             Map<String, String> result = new HashMap<>();
             for (Map.Entry<IProperty<?>, Comparable<?>> entry : state.getValues().entrySet()) {
-                result.put(entry.getKey().getName(), entry.getValue().toString());
+                String valueName = entry.getValue() instanceof IStringSerializable ?
+                        ((IStringSerializable) entry.getValue()).getName() :
+                        entry.getValue().toString().toLowerCase();
+
+                result.put(entry.getKey().getName(), valueName);
             }
             return result;
         }
