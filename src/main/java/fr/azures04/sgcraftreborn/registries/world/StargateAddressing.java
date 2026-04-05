@@ -1,4 +1,4 @@
-package fr.azures04.sgcraftreborn.util.math;
+package fr.azures04.sgcraftreborn.registries.world;
 
 import java.util.UUID;
 import java.util.regex.Pattern;

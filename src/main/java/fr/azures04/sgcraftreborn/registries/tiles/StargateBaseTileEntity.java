@@ -7,21 +7,21 @@ import fr.azures04.sgcraftreborn.registries.blocks.StargateBaseBlock;
 import fr.azures04.sgcraftreborn.registries.structures.StargateStructure;
 import fr.azures04.sgcraftreborn.registries.tiles.states.StargateIrisState;
 import fr.azures04.sgcraftreborn.registries.tiles.states.StargateVortexState;
-import fr.azures04.sgcraftreborn.registries.worlds.data.StargateWorldData;
-import fr.azures04.sgcraftreborn.util.math.LocationPos;
-import fr.azures04.sgcraftreborn.util.math.StargateAddressing;
+import fr.azures04.sgcraftreborn.registries.world.data.StargateWorldData;
+import fr.azures04.sgcraftreborn.util.math.ExtendedPos;
+import fr.azures04.sgcraftreborn.registries.world.StargateAddressing;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityType;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
-import org.apache.logging.log4j.Level;
 
 public class StargateBaseTileEntity extends TileEntity {
 
     private boolean isMerged;
     private boolean isInitiator;
-    private LocationPos connectedLoc;
+    private ExtendedPos connectedLoc;
+    private BlockPos controllerPos;
     private String dialledAddress = "";
     private String address = "";
     private double energyInBuffer;
@@ -46,10 +46,11 @@ public class StargateBaseTileEntity extends TileEntity {
 
     @Override
     public void read(NBTTagCompound compound) {
+        super.read(compound);
         isMerged = compound.getBoolean("isMerged");
         isInitiator = compound.getBoolean("isInitiator");
         if (compound.contains("connectedX", 3)) {
-            connectedLoc = new LocationPos(
+            connectedLoc = new ExtendedPos(
                 compound.getInt("connectedX"),
                 compound.getInt("connectedY"),
                 compound.getInt("connectedZ"),
@@ -94,7 +95,7 @@ public class StargateBaseTileEntity extends TileEntity {
         compound.setDouble("lastRingAngle", lastRingAngle);
         compound.setDouble("targetRingAngle", targetRingAngle);
         compound.setString("address", address);
-        return compound;
+        return super.write(compound);
     }
 
     public void setMerged(boolean merged) {
@@ -114,10 +115,22 @@ public class StargateBaseTileEntity extends TileEntity {
                     if (SGCraftRebornConfig.LOG_STARGATE_EVENTS.get()) {
                         SGCraftReborn.LOGGER.info(String.format("STARGATE REMOVED DIM: %d, X: %d Y: %d Z: %d", world.dimension.getType().getId(), pos.getX(), pos.getY(), pos.getZ()));
                     }
+                    if (controllerPos != null) {
+                        TileEntity te = world.getTileEntity(controllerPos);
+                        if (te instanceof StargateControllerTileEntity) {
+                            ((StargateControllerTileEntity) te).unlink();
+                        }
+                        controllerPos = null;
+                        markDirty();
+                    }
                 }
             }
             this.markDirty();
         }
+    }
+
+    public void setControllerPos(BlockPos controllerPos) {
+        this.controllerPos = controllerPos;
     }
 
     public void setInitiator(boolean initiator) {
@@ -125,7 +138,7 @@ public class StargateBaseTileEntity extends TileEntity {
         markDirty();
     }
 
-    public void setLocationPos(LocationPos location) {
+    public void setLocationPos(ExtendedPos location) {
         connectedLoc = location;
         markDirty();
     }
@@ -258,10 +271,14 @@ public class StargateBaseTileEntity extends TileEntity {
         return address;
     }
 
+    public BlockPos getControllerPos() {
+        return controllerPos;
+    }
+
     @Override
     public void onLoad() {
         if (!world.isRemote) {
-            StargateWorldData.get(world).register(getAddress(), new LocationPos(pos, world.getDimension().getType().getId()));
+            StargateWorldData.get(world).register(getAddress(), new ExtendedPos(pos, world.getDimension().getType().getId()));
         }
     }
 

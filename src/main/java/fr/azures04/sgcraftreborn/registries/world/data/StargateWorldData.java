@@ -1,12 +1,11 @@
-package fr.azures04.sgcraftreborn.registries.worlds.data;
+package fr.azures04.sgcraftreborn.registries.world.data;
 
-import fr.azures04.sgcraftreborn.util.math.LocationPos;
+import fr.azures04.sgcraftreborn.util.math.ExtendedPos;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
 import net.minecraft.world.dimension.DimensionType;
-import net.minecraft.world.storage.DimensionSavedDataManager;
 import net.minecraft.world.storage.WorldSavedData;
 import net.minecraft.world.storage.WorldSavedDataStorage;
 
@@ -16,7 +15,7 @@ import java.util.Map;
 public class StargateWorldData extends WorldSavedData {
 
     public static final String NAME = "sgcraftreborn_stargates";
-    private Map<String, LocationPos> stargates = new HashMap<>();
+    private Map<String, ExtendedPos> stargates = new HashMap<>();
 
     public StargateWorldData() {
         super(NAME);
@@ -33,7 +32,7 @@ public class StargateWorldData extends WorldSavedData {
         for (int i = 0; i < list.size(); i++) {
             NBTTagCompound entry = list.getCompound(i);
             String address = entry.getString("a");
-            LocationPos pos = new LocationPos(
+            ExtendedPos pos = new ExtendedPos(
                 entry.getInt("x"),
                 entry.getInt("y"),
                 entry.getInt("z"),
@@ -46,7 +45,7 @@ public class StargateWorldData extends WorldSavedData {
     @Override
     public NBTTagCompound write(NBTTagCompound nbt) {
         NBTTagList list = new NBTTagList();
-        for (Map.Entry<String, LocationPos> entry : stargates.entrySet()) {
+        for (Map.Entry<String, ExtendedPos> entry : stargates.entrySet()) {
             NBTTagCompound tag = new NBTTagCompound();
             tag.setString("a", entry.getKey());
             tag.setInt("x", entry.getValue().getX());
@@ -59,7 +58,7 @@ public class StargateWorldData extends WorldSavedData {
         return nbt;
     }
 
-    public void register(String address, LocationPos pos) {
+    public void register(String address, ExtendedPos pos) {
         stargates.put(address, pos);
         markDirty();
     }
@@ -69,7 +68,7 @@ public class StargateWorldData extends WorldSavedData {
         markDirty();
     }
 
-    public LocationPos find(String address) {
+    public ExtendedPos find(String address) {
         return stargates.get(address);
     }
 
