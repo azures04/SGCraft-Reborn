@@ -12,21 +12,21 @@ public class SGCraftRebornConfig {
     public static ForgeConfigSpec.BooleanValue ALLOW_CRAFTING_NAQUADAH;
     public static ForgeConfigSpec.BooleanValue ENABLE_NAQUADAH_ORE;
     public static ForgeConfigSpec.BooleanValue ADD_ORES_TO_EXISTING_WORLDS;
+    public static ForgeConfigSpec.BooleanValue LOG_STARGATE_EVENTS;
 
-    //Config
+    //Naquadah
     public static ForgeConfigSpec.IntValue GEN_ISOLATED_ODDS;
     public static ForgeConfigSpec.IntValue MAX_ISOLATED_NODES;
     public static ForgeConfigSpec.IntValue GEN_UNDER_LAVA_ODDS;
     public static ForgeConfigSpec.IntValue MAX_NODES_UNDER_LAVA;
 
+    //DHD
+    public static ForgeConfigSpec.IntValue LINK_RANGE_X;
+    public static ForgeConfigSpec.IntValue LINK_RANGE_Y;
+    public static ForgeConfigSpec.IntValue LINK_RANGE_Z;
+
     static {
         BUILDER.push("options");
-            ALLOW_CRAFTING_CRYSTALS = BUILDER
-                .comment("Enables recipes for crafting core and controller crystals from vanilla items.")
-                .define("allowCraftingCrystals", false);
-            ALLOW_CRAFTING_NAQUADAH = BUILDER
-                .comment("Enables a recipe for crafting naquadah from vanilla items. Defaults to false.")
-                .define("allowCraftingNaquadah", false);
             ENABLE_NAQUADAH_ORE = BUILDER
                 .comment("Enables generating naquadah ore in the world.")
                 .define("enableNaquadahOre", true);
@@ -34,6 +34,15 @@ public class SGCraftRebornConfig {
                 .comment("If true, naquadah ore will be added to previously-generated chunks.\n" +
                 "Otherwise, only new worlds. or chunks generated after SGCraft is installed, will contain naquadah ore.")
                 .define("addOresToExistingWorlds", true);
+            ALLOW_CRAFTING_CRYSTALS = BUILDER
+                .comment("Enables recipes for crafting core and controller crystals from vanilla items.")
+                .define("allowCraftingCrystals", false);
+            ALLOW_CRAFTING_NAQUADAH = BUILDER
+                .comment("Enables a recipe for crafting naquadah from vanilla items. Defaults to false.")
+                .define("allowCraftingNaquadah", false);
+            LOG_STARGATE_EVENTS = BUILDER
+                .comment("Write a message to the server log each time a stargate is merged or unmerged.")
+                .define("logStargateEvents", false);
         BUILDER.pop();
 
         BUILDER.push("naquadah");
@@ -49,6 +58,18 @@ public class SGCraftRebornConfig {
             MAX_NODES_UNDER_LAVA = BUILDER
                 .comment("Maximum number of naquadah ore clusters under lava per chunk. Higher numbers give more ore.")
                 .defineInRange("maxNodesUnderLava", 4, 1, 6);
+        BUILDER.pop();
+
+        BUILDER.push("dhd");
+            LINK_RANGE_X = BUILDER
+                .comment("Maximum distance between a stargate and its associated controller block.")
+                .defineInRange("linkRangeX", 5, 1, 15);
+            LINK_RANGE_Y = BUILDER
+                .comment("Maximum distance between a stargate and its associated controller block.")
+                .defineInRange("linkRangeY", 1, 1, 15);
+            LINK_RANGE_Z = BUILDER
+                .comment("Maximum distance between a stargate and its associated controller block.")
+                .defineInRange("linkRangeZ", 6, 1, 15);
         BUILDER.pop();
 
         SPEC = BUILDER.build();

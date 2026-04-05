@@ -1,7 +1,10 @@
 {
     "variants": {
-        "": {
-        	"model": "sgcraftreborn:block/stargate_chevron"
+        "invisible=false": {
+            "model": "sgcraftreborn:block/stargate_chevron"
+        },
+        "invisible=true": {
+            "model": "sgcraftreborn:block/invisible"
         }
     }
 }

@@ -1,4 +1,4 @@
-package fr.azures04.sgcraftreborn.client.models.smeg;
+package fr.azures04.sgcraftreborn.client.models.esmeg;
 
 import com.google.gson.Gson;
 import fr.azures04.sgcraftreborn.SGCraftReborn;
@@ -8,9 +8,9 @@ import net.minecraft.util.ResourceLocation;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
-public class SMEGLoader {
+public class ESMEGLoader {
 
-    public static SMEGModel load(ResourceLocation location) {
+    public static ESMEGModel load(ResourceLocation location) {
         String file = String.format("/assets/%s/%s", location.getNamespace(), location.getPath());
         InputStream is = SGCraftReborn.class.getResourceAsStream(file);
         InputStreamReader reader = null;
@@ -19,7 +19,7 @@ public class SMEGLoader {
         }
         reader = new InputStreamReader(is);
         Gson gson = new Gson();
-        return gson.fromJson(reader, SMEGModel.class);
+        return gson.fromJson(reader, ESMEGModel.class);
     }
 
 }

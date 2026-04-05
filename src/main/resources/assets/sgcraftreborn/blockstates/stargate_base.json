@@ -1,27 +1,30 @@
 {
     "variants": {
-        "facing=north": {
+        "invisible=false,facing=north": {
             "model": "sgcraftreborn:block/stargate_base"
         },
-        "facing=south": {
+        "invisible=false,facing=south": {
             "model": "sgcraftreborn:block/stargate_base",
             "y": 180
         },
-        "facing=west": {
+        "invisible=false,facing=west": {
             "model": "sgcraftreborn:block/stargate_base",
             "y": 270
         },
-        "facing=east": {
+        "invisible=false,facing=east": {
             "model": "sgcraftreborn:block/stargate_base",
             "y": 90
         },
-        "facing=up": {
+        "invisible=false,facing=up": {
             "model": "sgcraftreborn:block/stargate_base",
             "x": 270
         },
-        "facing=down": {
+        "invisible=false,facing=down": {
             "model": "sgcraftreborn:block/stargate_base",
             "x": 90
+        },
+        "invisible=true": {
+            "model": "sgcraftreborn:block/invisible"
         }
     }
 }

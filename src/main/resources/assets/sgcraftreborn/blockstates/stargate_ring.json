@@ -1,7 +1,10 @@
 {
     "variants": {
-        "": {
-        	"model": "sgcraftreborn:block/stargate_ring"
+        "invisible=false": {
+            "model": "sgcraftreborn:block/stargate_ring"
+        },
+        "invisible=true": {
+            "model": "sgcraftreborn:block/invisible"
         }
     }
 }

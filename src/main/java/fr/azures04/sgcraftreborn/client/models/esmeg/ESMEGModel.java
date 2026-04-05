@@ -1,4 +1,4 @@
-package fr.azures04.sgcraftreborn.client.models.smeg;
+package fr.azures04.sgcraftreborn.client.models.esmeg;
 
 import fr.azures04.sgcraftreborn.exceptions.MalformedSMEGException;
 import net.minecraft.block.state.IBlockState;
@@ -10,7 +10,7 @@ import net.minecraft.util.math.AxisAlignedBB;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SMEGModel {
+public class ESMEGModel {
 
     public String[] textures;
     public Map<String, Map<String, String>> overrides;
