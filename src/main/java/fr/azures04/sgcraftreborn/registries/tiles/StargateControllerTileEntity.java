@@ -2,7 +2,10 @@ package fr.azures04.sgcraftreborn.registries.tiles;
 
 import fr.azures04.sgcraftreborn.config.SGCraftRebornConfig;
 import fr.azures04.sgcraftreborn.registries.ModTilesEntities;
+import fr.azures04.sgcraftreborn.registries.blocks.StargateControllerBlock;
+import fr.azures04.sgcraftreborn.registries.blocks.states.StargateControllerStatus;
 import fr.azures04.sgcraftreborn.util.math.ExtendedPos;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityType;
@@ -61,8 +64,16 @@ public class StargateControllerTileEntity extends TileEntity {
     }
 
     private void linkToStargate(StargateBaseTileEntity gate, World world) {
+        if (gate.getControllerPos() != null) {
+            TileEntity existing = world.getTileEntity(gate.getControllerPos());
+            if (existing instanceof StargateControllerTileEntity) {
+                return;
+            }
+        }
         linkedStargate = new ExtendedPos(gate.getPos(), world.getDimension().getType().getId());
         gate.setControllerPos(new ExtendedPos(pos, world.getDimension().getType().getId()));
+        IBlockState state = world.getBlockState(pos);
+        world.setBlockState(pos, state.with(StargateControllerBlock.STATUS, StargateControllerStatus.LINKED), 3);
         markDirty();
     }
 
@@ -81,6 +92,8 @@ public class StargateControllerTileEntity extends TileEntity {
 
     public void unlink() {
         linkedStargate = null;
+        IBlockState state = world.getBlockState(pos);
+        world.setBlockState(pos, state.with(StargateControllerBlock.STATUS, StargateControllerStatus.UNLINKED), 3);
         markDirty();
     }
 
@@ -108,5 +121,12 @@ public class StargateControllerTileEntity extends TileEntity {
             compound.setInt("connectedD", linkedStargate.getDimension());
         }
         return super.write(compound);
+    }
+
+    @Override
+    public void onLoad() {
+        if (!world.isRemote) {
+            getLinkedStargateTE(world);
+        }
     }
 }

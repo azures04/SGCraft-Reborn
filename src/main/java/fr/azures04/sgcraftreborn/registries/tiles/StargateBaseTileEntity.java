@@ -57,6 +57,13 @@ public class StargateBaseTileEntity extends TileEntity {
                 compound.getInt("connectedD")
             );
         }
+        if (compound.contains("controllerX", 3)) {
+            controllerPos = new BlockPos(
+                compound.getInt("controllerX"),
+                compound.getInt("controllerY"),
+                compound.getInt("controllerZ")
+            );
+        }
         dialledAddress = compound.getString("dialledAddress");
         energyInBuffer = compound.getDouble("energyInBuffer");
         numEngagedChevrons = compound.getInt("numEngagedChevrons");
@@ -81,6 +88,11 @@ public class StargateBaseTileEntity extends TileEntity {
             compound.setInt("connectedY", connectedLoc.getY());
             compound.setInt("connectedZ", connectedLoc.getZ());
             compound.setInt("connectedD", connectedLoc.getDimension());
+        }
+        if (controllerPos != null) {
+            compound.setInt("controllerX", controllerPos.getX());
+            compound.setInt("controllerY", controllerPos.getY());
+            compound.setInt("controllerZ", controllerPos.getZ());
         }
         compound.setString("dialledAddress", dialledAddress);
         compound.setDouble("energyInBuffer", energyInBuffer);
@@ -131,6 +143,7 @@ public class StargateBaseTileEntity extends TileEntity {
 
     public void setControllerPos(BlockPos controllerPos) {
         this.controllerPos = controllerPos;
+        markDirty();
     }
 
     public void setInitiator(boolean initiator) {
@@ -278,7 +291,10 @@ public class StargateBaseTileEntity extends TileEntity {
     @Override
     public void onLoad() {
         if (!world.isRemote) {
-            StargateWorldData.get(world).register(getAddress(), new ExtendedPos(pos, world.getDimension().getType().getId()));
+            StargateWorldData.get(world).register(
+                    getAddress(),
+                    new ExtendedPos(pos, world.getDimension().getType().getId())
+            );
         }
     }
 
@@ -288,4 +304,5 @@ public class StargateBaseTileEntity extends TileEntity {
             StargateWorldData.get(world).unregister(getAddress());
         }
     }
+
 }
