@@ -14,6 +14,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityType;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 
 public class StargateBaseTileEntity extends TileEntity {
@@ -119,6 +120,7 @@ public class StargateBaseTileEntity extends TileEntity {
             if (!world.isRemote) {
                 if (merged) {
                     StargateStructure.hideStructure(world, pos, facing);
+                    this.notifyNearbyControllers();
                     if (SGCraftRebornConfig.LOG_STARGATE_EVENTS.get()) {
                         SGCraftReborn.LOGGER.info(String.format("STARGATE ADDED DIM: %d, X: %d Y: %d Z: %d", world.dimension.getType().getId(), pos.getX(), pos.getY(), pos.getZ()));
                     }
@@ -292,8 +294,8 @@ public class StargateBaseTileEntity extends TileEntity {
     public void onLoad() {
         if (!world.isRemote) {
             StargateWorldData.get(world).register(
-                    getAddress(),
-                    new ExtendedPos(pos, world.getDimension().getType().getId())
+                getAddress(),
+                new ExtendedPos(pos, world.getDimension().getType().getId())
             );
         }
     }
@@ -302,6 +304,23 @@ public class StargateBaseTileEntity extends TileEntity {
     public void onChunkUnloaded() {
         if (!world.isRemote) {
             StargateWorldData.get(world).unregister(getAddress());
+        }
+    }
+
+    private void notifyNearbyControllers() {
+        double rX = SGCraftRebornConfig.LINK_RANGE_X.get() * 2.0;
+        double rY = SGCraftRebornConfig.LINK_RANGE_Y.get() * 2.0;
+        double rZ = SGCraftRebornConfig.LINK_RANGE_Z.get() * 2.0;
+
+        AxisAlignedBB searchBox = new AxisAlignedBB(pos).grow(rX, rY, rZ);
+
+        for (TileEntity te : world.loadedTileEntityList) {
+            if (te instanceof StargateControllerTileEntity) {
+                BlockPos tePos = te.getPos();
+                if (searchBox.contains(tePos.getX(), tePos.getY(), tePos.getZ())) {
+                    ((StargateControllerTileEntity) te).getLinkedStargateTE(world);
+                }
+            }
         }
     }
 

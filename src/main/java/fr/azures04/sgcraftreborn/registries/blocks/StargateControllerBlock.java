@@ -93,4 +93,10 @@ public class StargateControllerBlock extends Block implements ISpecialItemRender
         player.sendMessage(new TextComponentString(state.toString()));
         return super.onBlockActivated(state, worldIn, pos, player, hand, side, hitX, hitY, hitZ);
     }
+
+    @Override
+    public void onBlockAdded(IBlockState state, World worldIn, BlockPos pos, IBlockState oldState) {
+        StargateControllerTileEntity controller = (StargateControllerTileEntity) worldIn.getTileEntity(pos);
+        controller.getLinkedStargateTE(worldIn);
+    }
 }

@@ -9,6 +9,7 @@ import net.minecraft.block.state.IBlockState;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityType;
+import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
@@ -44,20 +45,20 @@ public class StargateControllerTileEntity extends TileEntity {
     }
 
     private StargateBaseTileEntity searchNearbyStargate(World world) {
-        int rangeX = SGCraftRebornConfig.LINK_RANGE_X.get();
-        int rangeY = SGCraftRebornConfig.LINK_RANGE_Y.get();
-        int rangeZ = SGCraftRebornConfig.LINK_RANGE_Z.get();
+        AxisAlignedBB box = new AxisAlignedBB(pos).grow(
+                SGCraftRebornConfig.LINK_RANGE_X.get(),
+                SGCraftRebornConfig.LINK_RANGE_Y.get(),
+                SGCraftRebornConfig.LINK_RANGE_Z.get()
+        );
 
-        for (int y = -rangeY; y <= rangeY; y++) {
-            for (int x = -rangeX; x <= rangeX; x++) {
-                for (int z = -rangeZ; z <= rangeZ; z++) {
-                    BlockPos checkPos = pos.add(x, y, z);
-                    TileEntity te = world.getTileEntity(checkPos);
-                    if (te instanceof StargateBaseTileEntity) {
-                        StargateBaseTileEntity gate = (StargateBaseTileEntity) te;
-                        if (gate.isMerged()) return gate;
-                    }
-                }
+        for (BlockPos checkPos : BlockPos.getAllInBoxMutable(
+                (int)box.minX, (int)box.minY, (int)box.minZ,
+                (int)box.maxX, (int)box.maxY, (int)box.maxZ)) {
+
+            TileEntity te = world.getTileEntity(checkPos);
+            if (te instanceof StargateBaseTileEntity) {
+                StargateBaseTileEntity gate = (StargateBaseTileEntity) te;
+                if (gate.isMerged()) return gate;
             }
         }
         return null;
