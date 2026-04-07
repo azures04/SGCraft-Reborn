@@ -83,4 +83,12 @@ public class StargateWorldData extends WorldSavedData {
         return data;
     }
 
+    public boolean exists(String address) {
+        return stargates.containsKey(address);
+    }
+
+    public ExtendedPos findStargate(String address) {
+        return stargates.get(address);
+    }
+
 }

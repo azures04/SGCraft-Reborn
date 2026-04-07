@@ -4,6 +4,8 @@ import fr.azures04.sgcraftreborn.config.SGCraftRebornConfig;
 import fr.azures04.sgcraftreborn.registries.ModTilesEntities;
 import fr.azures04.sgcraftreborn.registries.blocks.StargateControllerBlock;
 import fr.azures04.sgcraftreborn.registries.blocks.states.StargateControllerStatus;
+import fr.azures04.sgcraftreborn.registries.world.StargateAddressing;
+import fr.azures04.sgcraftreborn.registries.world.data.StargateWorldData;
 import fr.azures04.sgcraftreborn.util.math.ExtendedPos;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.nbt.NBTTagCompound;
@@ -130,4 +132,21 @@ public class StargateControllerTileEntity extends TileEntity {
             getLinkedStargateTE(world);
         }
     }
+    public void onDial(String targetAddress) {
+        if (world.isRemote) return;
+        StargateWorldData data = StargateWorldData.get(this.world);
+
+        ExtendedPos destination = data.findStargate(targetAddress);
+
+        if (destination != null) {
+            StargateBaseTileEntity localGate = this.getLinkedStargateTE(world);
+
+            if (localGate != null) {
+                localGate.setDialledAddress(targetAddress);
+            }
+        } else {
+            throw StargateAddressing.StargateAddressingException.INVALID_ADDRESS;
+        }
+    }
+
 }
