@@ -9,11 +9,16 @@ import fr.azures04.sgcraftreborn.registries.world.data.StargateWorldData;
 import fr.azures04.sgcraftreborn.util.math.ExtendedPos;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityType;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.minecraft.world.WorldServer;
+import net.minecraft.world.dimension.DimensionType;
+import net.minecraftforge.fml.LogicalSide;
+import net.minecraftforge.fml.LogicalSidedProvider;
 
 public class StargateControllerTileEntity extends TileEntity {
 
@@ -147,6 +152,41 @@ public class StargateControllerTileEntity extends TileEntity {
         } else {
             throw StargateAddressing.StargateAddressingException.INVALID_ADDRESS;
         }
+    }
+
+    public String dial(String address) {
+        if (StargateAddressing.isValidAddress(address)) {
+            throw StargateAddressing.StargateAddressingException.INVALID_ADDRESS;
+        }
+
+        StargateBaseTileEntity localGate = getLinkedStargateTE(world);
+        if (localGate == null) {
+            return "No linked stargate";
+        }
+        if (localGate.isMerged()) {
+            return "Stargate not merged";
+        }
+
+        ExtendedPos remotePos = StargateWorldData.get(world).findStargate(address);
+        if (remotePos == null) {
+            return "No stargate at this address";
+        }
+
+        MinecraftServer server = LogicalSidedProvider.INSTANCE.get(LogicalSide.SERVER);
+        WorldServer remoteWorld = server.getWorld(DimensionType.getById(remotePos.getDimension()));
+        TileEntity remoteTe = remoteWorld.getTileEntity(remotePos.getPos());
+        if (!(remoteTe instanceof StargateBaseTileEntity)) {
+            return "Stargate not found";
+        }
+
+        StargateBaseTileEntity remoteGate = (StargateBaseTileEntity) remoteTe;
+        if (!remoteGate.isMerged()) {
+            return "Stargate structure malformed";
+        }
+
+
+
+        return null;
     }
 
 }

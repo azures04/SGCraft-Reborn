@@ -13,6 +13,7 @@ public class SGCraftRebornConfig {
     public static ForgeConfigSpec.BooleanValue ENABLE_NAQUADAH_ORE;
     public static ForgeConfigSpec.BooleanValue ADD_ORES_TO_EXISTING_WORLDS;
     public static ForgeConfigSpec.BooleanValue LOG_STARGATE_EVENTS;
+    public static 
 
     //Naquadah
     public static ForgeConfigSpec.IntValue GEN_ISOLATED_ODDS;
@@ -24,6 +25,26 @@ public class SGCraftRebornConfig {
     public static ForgeConfigSpec.IntValue LINK_RANGE_X;
     public static ForgeConfigSpec.IntValue LINK_RANGE_Y;
     public static ForgeConfigSpec.IntValue LINK_RANGE_Z;
+
+    //Stargate
+    public static ForgeConfigSpec.BooleanValue CLOSE_FROM_EITHER_END;
+    public static ForgeConfigSpec.BooleanValue ONE_WAY_TRAVEL;
+    public static ForgeConfigSpec.IntValue SECONDS_TO_STAY_OPEN;
+    public static ForgeConfigSpec.IntValue GATE_OPENING_PER_FUEL_ITEM;
+    public static ForgeConfigSpec.IntValue MINUTES_OPEN_PER_FUEL_ITEM;
+    public static ForgeConfigSpec.DoubleValue DISTANCE_FACTOR_MULTIPLIER;
+    public static ForgeConfigSpec.DoubleValue INTER_DIMENSION_MULTIPLIER;
+    public static ForgeConfigSpec.IntValue ENERGY_PER_FUEL_ITEM;
+    public static ForgeConfigSpec.IntValue MAX_ENERGY_BUFFER;
+    public static ForgeConfigSpec.IntValue EXPLOSION_RADIUS;
+    public static ForgeConfigSpec.BooleanValue EXPLOSION_FLAME;
+    public static ForgeConfigSpec.BooleanValue EXPLOSION_SMOKE;
+    public static ForgeConfigSpec.BooleanValue TRANSPARENCY;
+    public static ForgeConfigSpec.DoubleValue SOUND_VOLUME;
+    public static ForgeConfigSpec.BooleanValue VARIABLE_CHEVRON_POSITIONS;
+
+    //Iris
+    public static ForgeConfigSpec.BooleanValue PRESERVE_INVENTORY;
 
     static {
         BUILDER.push("options");
@@ -70,6 +91,60 @@ public class SGCraftRebornConfig {
             LINK_RANGE_Z = BUILDER
                 .comment("Maximum distance between a stargate and its associated controller block.")
                 .defineInRange("linkRangeZ", 6, 1, 15);
+        BUILDER.pop();
+
+        BUILDER.push("stargate");
+            CLOSE_FROM_EITHER_END = BUILDER
+                .comment("Whether a stargate connection can be closed from either end, or only from the initiating end.")
+                .define("closeFromEitherEnd", true);
+            ONE_WAY_TRAVEL = BUILDER
+                .comment("Whether a wormhole can be traversed in both directions, or only from the initiating side.")
+                .define("oneWayTravel", false);
+            SECONDS_TO_STAY_OPEN = BUILDER
+                .comment("Number of seconds a connection stays open before closing automatically. Setting this to 0 will cause the gate to stay open until energy runs out.")
+                .defineInRange("secondsToStayOpen", 300, 0, 999999);
+            GATE_OPENING_PER_FUEL_ITEM = BUILDER
+                .comment("Maximum number of times a gate can be opened using the fuel from one piece of naquadah. Will be less for long-distance and cross-dimension connections.")
+                .defineInRange("gateOpeningsPerFuelItem", 24, 2, 1024);
+            MINUTES_OPEN_PER_FUEL_ITEM = BUILDER
+                .comment("Maximum number of minutes for which the fuel from one piece of naquadah will keep a gate open. Will be less for long-distance and cross-dimension connections.")
+                .defineInRange("minutesOpenPerFuelItem", 80, 10, 320);
+            DISTANCE_FACTOR_MULTIPLIER = BUILDER
+                .comment("A coefficient governing the dependence of energy use on distance.")
+                .defineInRange("distanceFactorMultiplier", 1.0D, 1.0D, 4.0D);
+            INTER_DIMENSION_MULTIPLIER = BUILDER
+                .comment("All energy use is multiplied by this factor when connecting between dimensions.")
+                .defineInRange("interDimensionMultiplier", 4.0D, 1.0D, 8.0D);
+            ENERGY_PER_FUEL_ITEM = BUILDER.
+                comment("Number of stargate energy units (SEU) obtained from one piece of naquadah.")
+                .defineInRange("energyPerFuelItem", 96000, 96000, 384000);
+            MAX_ENERGY_BUFFER = BUILDER
+                .comment("Capacity of stargate internal energy buffer in SEU.")
+                .defineInRange("maxEnergyBuffer", 1000, 1000, 10000);
+            EXPLOSION_RADIUS = BUILDER
+                .comment("Size of explosion made by destroying an open stargate. Set to 0 to prevent explosions.")
+                .defineInRange("explosionRadius", 0, 10, 40);
+            EXPLOSION_FLAME = BUILDER
+                .comment("Whether a stargate explosion sets things on fire.")
+                .define("explosionFlame", true);
+            EXPLOSION_SMOKE = BUILDER
+                .comment("Whether a stargate explosion gives off smoke.")
+                .define("explosionSmoke", true);
+            TRANSPARENCY = BUILDER
+                .comment("If true, the event horizon is rendered with partial transparency.")
+                .define("transparency", true);
+            SOUND_VOLUME = BUILDER
+                .comment("Relative volume of stargate sounds")
+                .defineInRange("soundVolume", 1.0D, 0.0D, 10.0D);
+            VARIABLE_CHEVRON_POSITIONS = BUILDER
+                .comment("If true, positions of chevrons vary depending on the number of chevrons and whether base camouflage is present. If false, chevrons are always in the same positions.")
+                .define("variableChevronPositions", true);
+        BUILDER.pop();
+
+        BUILDER.push("iris");
+            PRESERVE_INVENTORY = BUILDER
+                .comment("If true, prevents the items in a player's inventory from being destroyed when the player is killed by an iris. The items will still be dropped, however, and armour being worn will take damage from the impact.")
+                .define("preserveInventory", true);
         BUILDER.pop();
 
         SPEC = BUILDER.build();

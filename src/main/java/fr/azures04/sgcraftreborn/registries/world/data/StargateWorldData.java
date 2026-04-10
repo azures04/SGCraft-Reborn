@@ -68,10 +68,6 @@ public class StargateWorldData extends WorldSavedData {
         markDirty();
     }
 
-    public ExtendedPos find(String address) {
-        return stargates.get(address);
-    }
-
     public static StargateWorldData get(World world) {
         WorldSavedDataStorage storage = ((WorldServer) world).getMapStorage();
         DimensionType dimension = world.getDimension().getType();

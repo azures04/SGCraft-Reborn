@@ -1,5 +1,6 @@
 package fr.azures04.sgcraftreborn.util.math;
 
+import jdk.nashorn.internal.ir.Block;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
@@ -36,5 +37,9 @@ public class ExtendedPos extends BlockPos {
 
     public int getDimension() {
         return d;
+    }
+
+    public BlockPos getPos() {
+        return new BlockPos(getX(), getY(), getZ());
     }
 }

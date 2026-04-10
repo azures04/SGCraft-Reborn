@@ -324,4 +324,16 @@ public class StargateBaseTileEntity extends TileEntity {
         }
     }
 
+    public void startDialling(String targetAddress, StargateBaseTileEntity remoteGate, boolean isInitiator) {
+        this.dialledAddress = targetAddress;
+        this.isInitiator = isInitiator;
+        this.connectedLoc = new ExtendedPos(
+            remoteGate.getPos(),
+            remoteGate.getWorld().getDimension().getType().getId()
+        );
+        this.vortexState = StargateVortexState.OPENING;
+        markDirty();
+        boolean canTravel = isInitiator /* || !SGCraftRebornConfig.ONE_WAY_TRAVEL.get()*/;
+    }
+
 }
