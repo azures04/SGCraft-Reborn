@@ -6,11 +6,11 @@ import java.util.regex.Pattern;
 public class StargateAddressing {
 
     private static final String SYMBOLS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    private static final Pattern ADDRESS_PATTERN = Pattern.compile("^[A-Z0-9]{7}$");
-    private static final Pattern FORMAT_PATTERN = Pattern.compile("^([A-Z0-9]{3})([A-Z0-9]{4})$");
+    private static final Pattern ADDRESS_PATTERN = Pattern.compile("^[A-Z0-9]{9}$");
+    private static final Pattern FORMAT_PATTERN = Pattern.compile("^([A-Z0-9]{4})([A-Z0-9]{3})([A-Z0-9]{2})$");
 
     public static String formatAddress(String address) {
-        return FORMAT_PATTERN.matcher(address).replaceAll("$1-$2");
+        return FORMAT_PATTERN.matcher(address).replaceAll("$1-$2-$3");
     }
 
     public static String normalizeAddress(String address) {
@@ -25,7 +25,7 @@ public class StargateAddressing {
         UUID uuid = UUID.randomUUID();
         long bits = uuid.getMostSignificantBits() & Long.MAX_VALUE;
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < 7; i++) {
+        for (int i = 0; i < 9; i++) {
             sb.append(SYMBOLS.charAt((int)(bits % 36)));
             bits /= 36;
         }

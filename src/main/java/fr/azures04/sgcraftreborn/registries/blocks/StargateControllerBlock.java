@@ -4,6 +4,7 @@ import fr.azures04.sgcraftreborn.client.models.ISpecialItemRenderer;
 import fr.azures04.sgcraftreborn.client.models.tiles.items.StargateControllerISTER;
 import fr.azures04.sgcraftreborn.registries.blocks.states.StargateControllerStatus;
 import fr.azures04.sgcraftreborn.registries.tiles.StargateControllerTileEntity;
+import fr.azures04.sgcraftreborn.registries.world.StargateAddressing;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.renderer.tileentity.TileEntityItemStackRenderer;
@@ -90,8 +91,9 @@ public class StargateControllerBlock extends Block implements ISpecialItemRender
     @Override
     public boolean onBlockActivated(IBlockState state, World worldIn, BlockPos pos, EntityPlayer player, EnumHand hand, EnumFacing side, float hitX, float hitY, float hitZ) {
         if (worldIn.isRemote) return false;
-        player.sendMessage(new TextComponentString(state.toString()));
-        return super.onBlockActivated(state, worldIn, pos, player, hand, side, hitX, hitY, hitZ);
+        StargateControllerTileEntity controller = (StargateControllerTileEntity) worldIn.getTileEntity(pos);
+        player.sendMessage(new TextComponentString(StargateAddressing.formatAddress(controller.getLinkedStargateTE(worldIn).getAddress())));
+        return true;
     }
 
     @Override

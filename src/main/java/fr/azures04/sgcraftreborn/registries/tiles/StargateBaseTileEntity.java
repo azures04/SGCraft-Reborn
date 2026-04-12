@@ -11,11 +11,19 @@ import fr.azures04.sgcraftreborn.registries.world.data.StargateWorldData;
 import fr.azures04.sgcraftreborn.util.math.ExtendedPos;
 import fr.azures04.sgcraftreborn.registries.world.StargateAddressing;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityType;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.ITickable;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.WorldServer;
+import net.minecraft.world.dimension.DimensionType;
+import net.minecraftforge.fml.LogicalSide;
+import net.minecraftforge.fml.LogicalSidedProvider;
+
+import java.util.Objects;
 
 public class StargateBaseTileEntity extends TileEntity {
 
@@ -36,6 +44,11 @@ public class StargateBaseTileEntity extends TileEntity {
     private double ringAngle;
     private double lastRingAngle;
     private double targetRingAngle;
+    private int timeout;
+    static final int DIALLING_TIME = 40;
+    static final int INTER_DIALLING_TIME = 10;
+    static final int TRANSIENT_DURATION = 20;
+    static final int DISCONNECT_TIME = 30;
 
     public StargateBaseTileEntity() {
         super(ModTilesEntities.STARGATE_BASE_BLOCK);
@@ -226,7 +239,7 @@ public class StargateBaseTileEntity extends TileEntity {
         return isInitiator;
     }
 
-    public BlockPos getConnectedLoc() {
+    public ExtendedPos getConnectedLoc() {
         return connectedLoc;
     }
 
@@ -322,18 +335,6 @@ public class StargateBaseTileEntity extends TileEntity {
                 }
             }
         }
-    }
-
-    public void startDialling(String targetAddress, StargateBaseTileEntity remoteGate, boolean isInitiator) {
-        this.dialledAddress = targetAddress;
-        this.isInitiator = isInitiator;
-        this.connectedLoc = new ExtendedPos(
-            remoteGate.getPos(),
-            remoteGate.getWorld().getDimension().getType().getId()
-        );
-        this.vortexState = StargateVortexState.OPENING;
-        markDirty();
-        boolean canTravel = isInitiator /* || !SGCraftRebornConfig.ONE_WAY_TRAVEL.get()*/;
     }
 
 }

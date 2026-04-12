@@ -4,6 +4,7 @@ import fr.azures04.sgcraftreborn.config.SGCraftRebornConfig;
 import fr.azures04.sgcraftreborn.registries.ModTilesEntities;
 import fr.azures04.sgcraftreborn.registries.blocks.StargateControllerBlock;
 import fr.azures04.sgcraftreborn.registries.blocks.states.StargateControllerStatus;
+import fr.azures04.sgcraftreborn.registries.tiles.states.StargateVortexState;
 import fr.azures04.sgcraftreborn.registries.world.StargateAddressing;
 import fr.azures04.sgcraftreborn.registries.world.data.StargateWorldData;
 import fr.azures04.sgcraftreborn.util.math.ExtendedPos;
@@ -137,25 +138,9 @@ public class StargateControllerTileEntity extends TileEntity {
             getLinkedStargateTE(world);
         }
     }
-    public void onDial(String targetAddress) {
-        if (world.isRemote) return;
-        StargateWorldData data = StargateWorldData.get(this.world);
-
-        ExtendedPos destination = data.findStargate(targetAddress);
-
-        if (destination != null) {
-            StargateBaseTileEntity localGate = this.getLinkedStargateTE(world);
-
-            if (localGate != null) {
-                localGate.setDialledAddress(targetAddress);
-            }
-        } else {
-            throw StargateAddressing.StargateAddressingException.INVALID_ADDRESS;
-        }
-    }
 
     public String dial(String address) {
-        if (StargateAddressing.isValidAddress(address)) {
+        if (!StargateAddressing.isValidAddress(address)) {
             throw StargateAddressing.StargateAddressingException.INVALID_ADDRESS;
         }
 
@@ -163,7 +148,7 @@ public class StargateControllerTileEntity extends TileEntity {
         if (localGate == null) {
             return "No linked stargate";
         }
-        if (localGate.isMerged()) {
+        if (!localGate.isMerged()) {
             return "Stargate not merged";
         }
 
@@ -184,8 +169,12 @@ public class StargateControllerTileEntity extends TileEntity {
             return "Stargate structure malformed";
         }
 
-
-
+        if (localGate.getVortexState() != StargateVortexState.IDLE) {
+            throw StargateAddressing.StargateAddressingException.GATE_BUSY;
+        }
+        if (remoteGate.getVortexState() != StargateVortexState.IDLE) {
+            throw StargateAddressing.StargateAddressingException.GATE_BUSY;
+        }
         return null;
     }
 
