@@ -2,7 +2,7 @@ package fr.azures04.sgcraftreborn.client.models.esmeg;
 
 import com.google.gson.Gson;
 import fr.azures04.sgcraftreborn.SGCraftReborn;
-import fr.azures04.sgcraftreborn.exceptions.MissingSMEGFile;
+import fr.azures04.sgcraftreborn.common.exceptions.MissingSMEGFile;
 import net.minecraft.util.ResourceLocation;
 
 import java.io.InputStream;

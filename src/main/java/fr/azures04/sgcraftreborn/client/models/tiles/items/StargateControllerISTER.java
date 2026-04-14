@@ -1,6 +1,6 @@
 package fr.azures04.sgcraftreborn.client.models.tiles.items;
 
-import fr.azures04.sgcraftreborn.Constants;
+import fr.azures04.sgcraftreborn.common.Constants;
 import fr.azures04.sgcraftreborn.client.models.esmeg.ESMEGLoader;
 import fr.azures04.sgcraftreborn.client.models.esmeg.ESMEGModel;
 import fr.azures04.sgcraftreborn.client.models.esmeg.ESMEGRenderer;

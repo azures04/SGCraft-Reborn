@@ -1,6 +1,6 @@
 package fr.azures04.sgcraftreborn.client.models.esmeg;
 
-import fr.azures04.sgcraftreborn.exceptions.MalformedSMEGException;
+import fr.azures04.sgcraftreborn.common.exceptions.MalformedSMEGException;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.state.IProperty;
 import net.minecraft.util.IStringSerializable;

@@ -1,18 +1,18 @@
 package fr.azures04.sgcraftreborn.client.models.tiles;
 
-import fr.azures04.sgcraftreborn.Constants;
+import fr.azures04.sgcraftreborn.common.Constants;
 import fr.azures04.sgcraftreborn.client.models.esmeg.ESMEGLoader;
 import fr.azures04.sgcraftreborn.client.models.esmeg.ESMEGModel;
 import fr.azures04.sgcraftreborn.client.models.esmeg.ESMEGRenderer;
-import fr.azures04.sgcraftreborn.registries.blocks.StargateControllerBlock;
-import fr.azures04.sgcraftreborn.registries.tiles.StargateControllerTileEntity;
+import fr.azures04.sgcraftreborn.common.registries.blocks.StargateControllerBlock;
+import fr.azures04.sgcraftreborn.common.registries.tiles.StargateControllerTileEntity;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.util.ResourceLocation;
 
 import java.util.Map;
 
-public class StargateControllerTileEntityRenderer extends TileEntityRenderer<StargateControllerTileEntity> {
+public class  StargateControllerTileEntityRenderer extends TileEntityRenderer<StargateControllerTileEntity> {
 
     private final ESMEGModel model;
 
