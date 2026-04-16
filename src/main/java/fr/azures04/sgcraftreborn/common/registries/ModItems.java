@@ -1,6 +1,7 @@
 package fr.azures04.sgcraftreborn.common.registries;
 
 import fr.azures04.sgcraftreborn.common.Constants;
+import fr.azures04.sgcraftreborn.common.registries.items.UpgradeItem;
 import net.minecraft.item.Item;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,8 +23,8 @@ public class ModItems {
         NAQUADAH_INGOT = register("naquadah_ingot", new Item(new Item.Properties().group(ModItemGroups.SGCRAFT_REBORN)));
         STARGATE_CORE_CRYSTAL = register("stargate_core_crystal", new Item(new Item.Properties().group(ModItemGroups.SGCRAFT_REBORN)));
         STARGATE_IRIS_BLADE = register("stargate_iris_blade", new Item(new Item.Properties().group(ModItemGroups.SGCRAFT_REBORN)));
-        STARGATE_IRIS_UPGRADE = register("stargate_iris_upgrade", new Item(new Item.Properties().group(ModItemGroups.SGCRAFT_REBORN)));
-        STARGATE_CHEVRON_UPGRADE = register("stargate_chevron_upgrade", new Item(new Item.Properties().group(ModItemGroups.SGCRAFT_REBORN)));
+        STARGATE_IRIS_UPGRADE = register("stargate_iris_upgrade", new UpgradeItem(new Item.Properties().group(ModItemGroups.SGCRAFT_REBORN)));
+        STARGATE_CHEVRON_UPGRADE = register("stargate_chevron_upgrade", new UpgradeItem(new Item.Properties().group(ModItemGroups.SGCRAFT_REBORN)));
         STARGATE_CONTROLLER_CRYSTAL = register("stargate_controller_crystal", new Item(new Item.Properties().group(ModItemGroups.SGCRAFT_REBORN)));
     }
 

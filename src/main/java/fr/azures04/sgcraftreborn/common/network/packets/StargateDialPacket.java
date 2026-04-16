@@ -3,7 +3,6 @@ package fr.azures04.sgcraftreborn.common.network.packets;
 import fr.azures04.sgcraftreborn.SGCraftReborn;
 import fr.azures04.sgcraftreborn.common.registries.tiles.StargateControllerTileEntity;
 import fr.azures04.sgcraftreborn.common.util.math.ExtendedPos;
-import jdk.nashorn.internal.ir.Block;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.tileentity.TileEntity;
@@ -67,12 +66,14 @@ public class StargateDialPacket {
             }
             TileEntity te = world.getTileEntity(targetPos);
 
-            SGCraftReborn.LOGGER.log(Level.INFO, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-
             if (te instanceof StargateControllerTileEntity) {
                 StargateControllerTileEntity dhd = (StargateControllerTileEntity) te;
-                String r = dhd.dial(msg.address);
-                SGCraftReborn.LOGGER.log(Level.WARN, r);
+                try {
+                    String result = dhd.dial(msg.address);
+                    SGCraftReborn.LOGGER.log(Level.INFO, result);
+                } catch (RuntimeException e) {
+                    SGCraftReborn.LOGGER.log(Level.ERROR, e.toString());
+                }
             }
         });
         ctx.get().setPacketHandled(true);

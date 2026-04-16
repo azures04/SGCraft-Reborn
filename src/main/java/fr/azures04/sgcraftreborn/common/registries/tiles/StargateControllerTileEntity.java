@@ -1,7 +1,9 @@
 package fr.azures04.sgcraftreborn.common.registries.tiles;
 
+import fr.azures04.sgcraftreborn.SGCraftReborn;
 import fr.azures04.sgcraftreborn.common.config.SGCraftRebornConfig;
 import fr.azures04.sgcraftreborn.common.registries.ModTilesEntities;
+import fr.azures04.sgcraftreborn.common.registries.blocks.StargateBaseBlock;
 import fr.azures04.sgcraftreborn.common.registries.blocks.StargateControllerBlock;
 import fr.azures04.sgcraftreborn.common.registries.blocks.states.StargateControllerStatus;
 import fr.azures04.sgcraftreborn.common.registries.tiles.states.StargateVortexState;
@@ -20,6 +22,7 @@ import net.minecraft.world.WorldServer;
 import net.minecraft.world.dimension.DimensionType;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.LogicalSidedProvider;
+import org.apache.logging.log4j.Level;
 
 import java.util.Objects;
 
@@ -158,6 +161,9 @@ public class StargateControllerTileEntity extends TileEntity {
         ExtendedPos remotePos = StargateWorldData.get(world).findStargate(address);
 
         if (address.length() == 9) {
+            if (!localGate.hasChevronUpgrade()) {
+                throw StargateAddressing.StargateAddressingException.MISSING_CHEVRON_UPGRADE;
+            }
             remotePos = StargateWorldData.findStargateUniversally(Objects.requireNonNull(world.getServer()), address);
         }
 
@@ -174,7 +180,7 @@ public class StargateControllerTileEntity extends TileEntity {
 
         StargateBaseTileEntity remoteGate = (StargateBaseTileEntity) remoteTe;
         if (!remoteGate.isMerged()) {
-            throw StargateAddressing.StargateAddressingException.MALFORMED;
+            throw StargateAddressing.StargateAddressingException.NOT_MERGED;
         }
 
         if (localGate.getVortexState() != StargateVortexState.IDLE) {
@@ -182,6 +188,10 @@ public class StargateControllerTileEntity extends TileEntity {
         }
         if (remoteGate.getVortexState() != StargateVortexState.IDLE) {
             throw StargateAddressing.StargateAddressingException.GATE_BUSY;
+        }
+
+        if (address.length() == 9 && !remoteGate.hasChevronUpgrade()) {
+            throw StargateAddressing.StargateAddressingException.MISSING_CHEVRON_UPGRADE;
         }
 
         localGate.startDialing(address, remotePos, true);
@@ -203,5 +213,16 @@ public class StargateControllerTileEntity extends TileEntity {
                 world.setBlockState(this.pos, currentState.with(StargateControllerBlock.STATUS, StargateControllerStatus.ACTIVATED), 3);
             }
         }
+    }
+
+    @Override
+    public void remove() {
+        if (linkedStargate != null) {
+            TileEntity base = world.getTileEntity(linkedStargate);
+            if (base instanceof StargateBaseTileEntity) {
+                ((StargateBaseTileEntity) base).setControllerPos(null);
+            }
+        }
+        super.remove();
     }
 }

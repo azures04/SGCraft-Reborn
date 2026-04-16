@@ -2,12 +2,16 @@ package fr.azures04.sgcraftreborn.common.registries.blocks;
 
 import fr.azures04.sgcraftreborn.SGCraftReborn;
 import fr.azures04.sgcraftreborn.common.config.SGCraftRebornConfig;
+import fr.azures04.sgcraftreborn.common.registries.ModBlocks;
+import fr.azures04.sgcraftreborn.common.registries.ModItems;
 import fr.azures04.sgcraftreborn.common.registries.structures.StargateStructure;
 import fr.azures04.sgcraftreborn.common.registries.tiles.StargateBaseTileEntity;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.inventory.InventoryHelper;
 import net.minecraft.item.BlockItemUseContext;
+import net.minecraft.item.ItemStack;
 import net.minecraft.state.BooleanProperty;
 import net.minecraft.state.DirectionProperty;
 import net.minecraft.state.StateContainer;
@@ -91,15 +95,22 @@ public class StargateBaseBlock extends Block {
 
     @Override
     public void onReplaced(IBlockState state, World worldIn, BlockPos pos, IBlockState newState, boolean isMoving) {
-        if (!worldIn.isRemote) {
+        if (worldIn.isRemote) return;
+        StargateBaseTileEntity base = (StargateBaseTileEntity) worldIn.getTileEntity(pos);
+        if (base != null) {
             if (state.getBlock() != newState.getBlock()) {
                 StargateStructure.showStructure(worldIn, pos, state.get(FACING));
-                StargateBaseTileEntity base = (StargateBaseTileEntity) worldIn.getTileEntity(pos);
                 if (SGCraftRebornConfig.LOG_STARGATE_EVENTS.get()) {
                     if (base.isMerged()) {
                         SGCraftReborn.LOGGER.log(Level.INFO, String.format("STARGATE REMOVED DIM: %s, X: %d Y: %d Z: %d", worldIn.dimension.getType().getId(), pos.getX(), pos.getY(), pos.getZ()));
                     }
                 }
+            }
+            if (base.hasChevronUpgrade()) {
+                InventoryHelper.spawnItemStack(worldIn, pos.getX(), pos.getY(), pos.getZ(), new ItemStack(ModItems.STARGATE_CHEVRON_UPGRADE));
+            }
+            if (base.hasIrisUpgrade()) {
+                InventoryHelper.spawnItemStack(worldIn, pos.getX(), pos.getY(), pos.getZ(), new ItemStack(ModItems.STARGATE_IRIS_UPGRADE));
             }
         }
         super.onReplaced(state, worldIn, pos, newState, isMoving);
@@ -108,18 +119,47 @@ public class StargateBaseBlock extends Block {
     @Override
     public boolean onBlockActivated(IBlockState state, World worldIn, BlockPos pos, EntityPlayer player, EnumHand hand, EnumFacing side, float hitX, float hitY, float hitZ) {
         if (worldIn.isRemote) return true;
+        StargateBaseTileEntity base = (StargateBaseTileEntity) worldIn.getTileEntity(pos);
 
-        if (hand == EnumHand.MAIN_HAND) {
-            StargateBaseTileEntity base = (StargateBaseTileEntity) worldIn.getTileEntity(pos);
-
-            if (base != null) {
+        if (base != null) {
+            if (hand == EnumHand.MAIN_HAND) {
                 player.sendMessage(new TextComponentString("VORTEX STATE : " + base.getVortexState()));
                 player.sendMessage(new TextComponentString("LOCAL ADDRESS : " + base.getAddress()));
                 player.sendMessage(new TextComponentString("REMOTE ADDRESS : " + base.getDialledAddress()));
                 player.sendMessage(new TextComponentString("TIMEOUT : " + base.timeout));
+                player.sendMessage(new TextComponentString("HAS IRIS : " + base.hasIrisUpgrade()));
+                player.sendMessage(new TextComponentString("IRIS STATE : " + base.getIrisState()));
+                player.sendMessage(new TextComponentString("HAS CHEVRON : " + base.hasChevronUpgrade()));
+            }
+            if (player.isSneaking()) {
+                if (player.getHeldItem(hand).getItem() == ModItems.STARGATE_CHEVRON_UPGRADE) {
+                    base.setHasChevronUpgrade(true);
+                    if (!player.isCreative()) {
+                        player.getHeldItem(hand).shrink(1);
+                    }
+                }
+                if (player.getHeldItem(hand).getItem() == ModItems.STARGATE_IRIS_UPGRADE) {
+                    base.setHasIrisUpgrade(true);
+                    if (!player.isCreative()) {
+                        player.getHeldItem(hand).shrink(1);
+                    }
+                }
             }
         }
-
         return true;
+    }
+
+    @Override
+    public void neighborChanged(IBlockState state, World worldIn, BlockPos pos, Block blockIn, BlockPos fromPos) {
+        if (worldIn.isRemote) return;
+        boolean isPowered = worldIn.isBlockPowered(pos);
+        StargateBaseTileEntity base = (StargateBaseTileEntity) worldIn.getTileEntity(pos);
+        if (base != null) {
+            if (base.hasIrisUpgrade()) {
+                System.out.println("test");
+                base.setIrisDeployed(isPowered);
+            }
+        }
+        super.neighborChanged(state, worldIn, pos, blockIn, fromPos);
     }
 }

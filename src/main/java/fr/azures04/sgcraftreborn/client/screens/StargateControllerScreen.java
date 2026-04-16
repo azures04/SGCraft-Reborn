@@ -1,7 +1,9 @@
 package fr.azures04.sgcraftreborn.client.screens;
 
+import fr.azures04.sgcraftreborn.SGCraftReborn;
 import fr.azures04.sgcraftreborn.common.network.StargateNetwork;
 import fr.azures04.sgcraftreborn.common.network.packets.StargateDialPacket;
+import fr.azures04.sgcraftreborn.common.registries.tiles.StargateControllerTileEntity;
 import fr.azures04.sgcraftreborn.common.util.math.ExtendedPos;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiScreen;
@@ -10,6 +12,8 @@ import net.minecraft.util.ResourceLocation;
 
 import fr.azures04.sgcraftreborn.common.Constants;
 import fr.azures04.sgcraftreborn.common.world.StargateAddressing;
+import net.minecraft.world.World;
+import org.apache.logging.log4j.Level;
 
 public class StargateControllerScreen extends GuiScreen {
 
@@ -120,7 +124,7 @@ public class StargateControllerScreen extends GuiScreen {
 
     private String padAddress(String address) {
         StringBuilder sb = new StringBuilder(address);
-        while (sb.length() < addressLength) sb.append(" ");
+        while (sb.length() < addressLength) sb.append("-");
         return StargateAddressing.formatAddress(sb.toString());
     }
 

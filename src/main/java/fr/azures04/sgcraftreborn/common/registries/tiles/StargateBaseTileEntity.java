@@ -18,11 +18,13 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityType;
+import net.minecraft.util.DamageSource;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ITickable;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
+import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.Teleporter;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
@@ -55,6 +57,8 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable {
     static final int INTER_DIALLING_TIME = 10;
     static final int TRANSIENT_DURATION = 20;
     static final int DISCONNECT_TIME = 30;
+    private int irisTimeout = 0;
+    private static final int IRIS_TRANSITION_TIME = 20;
 
     public StargateBaseTileEntity() {
         super(ModTilesEntities.STARGATE_BASE_BLOCK);
@@ -264,11 +268,11 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable {
         return numEngagedChevrons;
     }
 
-    public boolean isHasChevronUpgrade() {
+    public boolean hasChevronUpgrade() {
         return hasChevronUpgrade;
     }
 
-    public boolean isHasIrisUpgrade() {
+    public boolean hasIrisUpgrade() {
         return hasIrisUpgrade;
     }
 
@@ -372,6 +376,14 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable {
         this.timeout = 0;
         this.markDirty();
 
+        StargateBaseTileEntity remoteGate = getRemoteGate(targetAddress);
+
+        if (remoteGate.getVortexState() != StargateVortexState.CLOSING && remoteGate.getVortexState() != StargateVortexState.IDLE) {
+            remoteGate.disconnect();
+        }
+    }
+
+    public StargateBaseTileEntity getRemoteGate(String targetAddress) {
         if (targetAddress != null && !targetAddress.isEmpty()) {
             MinecraftServer server = world.getServer();
             if (server != null) {
@@ -386,14 +398,13 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable {
 
                         if (remoteTE instanceof StargateBaseTileEntity) {
                             StargateBaseTileEntity remoteGate = (StargateBaseTileEntity) remoteTE;
-                            if (remoteGate.getVortexState() != StargateVortexState.CLOSING && remoteGate.getVortexState() != StargateVortexState.IDLE) {
-                                remoteGate.disconnect();
-                            }
+                            return remoteGate;
                         }
                     }
                 }
             }
         }
+        return null;
     }
 
     public void startDialing(String targetAddress, ExtendedPos targetLocation, boolean isInitiator) {
@@ -414,6 +425,19 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable {
             disconnect();
         }
 
+        if (this.irisTimeout > 0) {
+            this.irisTimeout--;
+
+            if (this.irisTimeout <= 0) {
+                if (this.irisState == StargateIrisState.CLOSING) {
+                    this.irisState = StargateIrisState.CLOSED;
+                } else if (this.irisState == StargateIrisState.OPENING) {
+                    this.irisState = StargateIrisState.OPEN;
+                }
+                this.markDirty();
+            }
+        }
+
         switch (this.vortexState) {
             case DIALLING:
                 if (this.timeout > 0) {
@@ -427,7 +451,15 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable {
             case ACTIVE:
                 if (this.timeout > 0) {
                     this.timeout--;
-                    handleEntityTeleportation();
+                    if (this.irisState == StargateIrisState.OPEN) {
+                        if (SGCraftRebornConfig.ONE_WAY_TRAVEL.get()) {
+                            handleEntityTeleportation();
+                        } else if (isInitiator()) {
+                            handleEntityTeleportation();
+                        }
+                    } else if (this.irisState == StargateIrisState.CLOSED) {
+                        handleEntityVaporization();
+                    }
                 } else {
                     disconnect();
                 }
@@ -440,6 +472,26 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable {
             case IDLE:
             default:
                 break;
+        }
+    }
+
+    private void handleEntityVaporization() {
+        if (this.getConnectedLoc() == null) return;
+
+        AxisAlignedBB eventHorizonBox = getEventHorizonBoundingBox();
+        List<Entity> entities = world.getEntitiesWithinAABB(Entity.class, eventHorizonBox);
+
+        for (Entity entity : entities) {
+            if (entity instanceof EntityPlayerMP) {
+                EntityPlayerMP player = (EntityPlayerMP) entity;
+                if (player.isCreative()) {
+                    player.sendMessage(new TextComponentString("L'iris est fermé !"));
+                }
+                if (SGCraftRebornConfig.PRESERVE_INVENTORY.get() == false) {
+                    player.inventory.clear();
+                }
+            }
+            entity.attackEntityFrom(DamageSource.FLY_INTO_WALL, Float.MAX_VALUE);
         }
     }
 
@@ -476,11 +528,16 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable {
         AxisAlignedBB eventHorizonBox = getEventHorizonBoundingBox();
         List<Entity> entities = world.getEntitiesWithinAABB(Entity.class, eventHorizonBox);
 
-        for (net.minecraft.entity.Entity entity : entities) {
+        StargateBaseTileEntity remoteGate = getRemoteGate(this.getDialledAddress());
+
+        if (remoteGate.getIrisState() != StargateIrisState.OPEN) {
+            this.handleEntityVaporization();
+            return;
+        }
+
+        for (Entity entity : entities) {
             if (entity.timeUntilPortal > 0) continue;
             teleportEntity(entity);
-
-            SGCraftReborn.LOGGER.log(Level.INFO, "Teleportation !");
         }
     }
 
@@ -580,4 +637,21 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable {
         }
         super.remove();
     }
+
+    public void setIrisDeployed(boolean deploy) {
+        if (deploy) {
+            if (this.irisState == StargateIrisState.OPEN) {
+                this.irisState = StargateIrisState.CLOSING;
+                this.irisTimeout = IRIS_TRANSITION_TIME;
+                this.markDirty();
+            }
+        } else {
+            if (this.irisState == StargateIrisState.CLOSED) {
+                this.irisState = StargateIrisState.OPENING;
+                this.irisTimeout = IRIS_TRANSITION_TIME;
+                this.markDirty();
+            }
+        }
+    }
+
 }

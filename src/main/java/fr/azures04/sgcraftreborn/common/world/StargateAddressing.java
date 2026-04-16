@@ -13,16 +13,12 @@ public class StargateAddressing {
         if (address == null) return null;
 
         if (address.length() == 9) {
-            return address.replaceAll("^([A-Z0-9]{4})([A-Z0-9]{3})([A-Z0-9]{2})$", "$1-$2-$3");
+            return address.replaceAll(FORMAT_PATTERN.toString(), "$1-$2-$3");
         } else if (address.length() == 7) {
-            return address.replaceAll("^([A-Z0-9]{4})([A-Z0-9]{3})$", "$1-$2");
+            return address.replaceAll(FORMAT_PATTERN.toString(), "$1-$2");
         }
 
         return address;
-    }
-
-    public static String normalizeAddress(String address) {
-        return address.toUpperCase().replaceAll("[^A-Z0-9]", "");
     }
 
     public static boolean isValidAddress(String address) {
@@ -40,10 +36,6 @@ public class StargateAddressing {
         return sb.toString();
     }
 
-    public static char getCharForButton(int id) {
-        return SYMBOLS.charAt((id - 1) % SYMBOLS.length());
-    }
-
     public static class StargateAddressingException extends RuntimeException {
         public static final StargateAddressingException INVALID_ADDRESS = new StargateAddressingException("Invalid address");
         public static final StargateAddressingException GATE_NOT_FOUND = new StargateAddressingException("No stargate at this address");
@@ -51,7 +43,8 @@ public class StargateAddressing {
         public static final StargateAddressingException NOT_LINKED = new StargateAddressingException("Stargate not linked");
         public static final StargateAddressingException NOT_MERGED = new StargateAddressingException("Stargate not merged");
         public static final StargateAddressingException NOT_AT_THIS_ADDRESS = new StargateAddressingException("No stargate at this address");
-        public static final StargateAddressingException MALFORMED = new StargateAddressingException("Stargate structure malformed");
+        public static final StargateAddressingException MISSING_IRIS_UPGRADE = new StargateAddressingException("You need an iris upgrade to do that.");
+        public static final StargateAddressingException MISSING_CHEVRON_UPGRADE = new StargateAddressingException("You need an chevron upgrade to do that.");
 
         public StargateAddressingException(String message) {
             super(message);
