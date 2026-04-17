@@ -100,17 +100,19 @@ public class StargateBaseBlock extends Block {
         if (base != null) {
             if (state.getBlock() != newState.getBlock()) {
                 StargateStructure.showStructure(worldIn, pos, state.get(FACING));
-                if (SGCraftRebornConfig.LOG_STARGATE_EVENTS.get()) {
-                    if (base.isMerged()) {
+                if (base.isMerged()) {
+                    if (SGCraftRebornConfig.LOG_STARGATE_EVENTS.get()) {
                         SGCraftReborn.LOGGER.log(Level.INFO, String.format("STARGATE REMOVED DIM: %s, X: %d Y: %d Z: %d", worldIn.dimension.getType().getId(), pos.getX(), pos.getY(), pos.getZ()));
                     }
+                    if (base.hasChevronUpgrade()) {
+                        InventoryHelper.spawnItemStack(worldIn, pos.getX(), pos.getY(), pos.getZ(), new ItemStack(ModItems.STARGATE_CHEVRON_UPGRADE));
+                        base.setHasChevronUpgrade(false);
+                    }
+                    if (base.hasIrisUpgrade()) {
+                        InventoryHelper.spawnItemStack(worldIn, pos.getX(), pos.getY(), pos.getZ(), new ItemStack(ModItems.STARGATE_IRIS_UPGRADE));
+                        base.setHasIrisUpgrade(false);
+                    }
                 }
-            }
-            if (base.hasChevronUpgrade()) {
-                InventoryHelper.spawnItemStack(worldIn, pos.getX(), pos.getY(), pos.getZ(), new ItemStack(ModItems.STARGATE_CHEVRON_UPGRADE));
-            }
-            if (base.hasIrisUpgrade()) {
-                InventoryHelper.spawnItemStack(worldIn, pos.getX(), pos.getY(), pos.getZ(), new ItemStack(ModItems.STARGATE_IRIS_UPGRADE));
             }
         }
         super.onReplaced(state, worldIn, pos, newState, isMoving);
@@ -156,7 +158,6 @@ public class StargateBaseBlock extends Block {
         StargateBaseTileEntity base = (StargateBaseTileEntity) worldIn.getTileEntity(pos);
         if (base != null) {
             if (base.hasIrisUpgrade()) {
-                System.out.println("test");
                 base.setIrisDeployed(isPowered);
             }
         }

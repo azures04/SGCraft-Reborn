@@ -1,6 +1,7 @@
 package fr.azures04.sgcraftreborn.common.network;
 
 import fr.azures04.sgcraftreborn.common.Constants;
+import fr.azures04.sgcraftreborn.common.network.packets.StargateCloseVortexPacket;
 import fr.azures04.sgcraftreborn.common.network.packets.StargateDialPacket;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.network.NetworkRegistry;
@@ -16,6 +17,7 @@ public class StargateNetwork {
 
     public static void registerPackets() {
         INSTANCE.registerMessage(packetId++, StargateDialPacket.class, StargateDialPacket::encode, StargateDialPacket::decode, StargateDialPacket::handle);
+        INSTANCE.registerMessage(packetId++, StargateCloseVortexPacket.class, StargateCloseVortexPacket::encode, StargateCloseVortexPacket::decode, StargateCloseVortexPacket::handle);
     }
 
 }

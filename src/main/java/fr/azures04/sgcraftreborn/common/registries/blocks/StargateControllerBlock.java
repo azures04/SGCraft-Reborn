@@ -4,6 +4,7 @@ import fr.azures04.sgcraftreborn.client.models.ISpecialItemRenderer;
 import fr.azures04.sgcraftreborn.client.models.tiles.items.StargateControllerISTER;
 import fr.azures04.sgcraftreborn.client.screens.StargateControllerScreen;
 import fr.azures04.sgcraftreborn.common.registries.blocks.states.StargateControllerStatus;
+import fr.azures04.sgcraftreborn.common.registries.tiles.StargateBaseTileEntity;
 import fr.azures04.sgcraftreborn.common.registries.tiles.StargateControllerTileEntity;
 import fr.azures04.sgcraftreborn.common.util.math.ExtendedPos;
 import net.minecraft.block.Block;
@@ -94,7 +95,10 @@ public class StargateControllerBlock extends Block implements ISpecialItemRender
     public boolean onBlockActivated(IBlockState state, World worldIn, BlockPos pos, EntityPlayer player, EnumHand hand, EnumFacing side, float hitX, float hitY, float hitZ) {
         if (worldIn.isRemote) {
             if (side == EnumFacing.UP) {
-                Minecraft.getInstance().displayGuiScreen(new StargateControllerScreen(new ExtendedPos(pos, worldIn.dimension.getType().getId())));
+                ExtendedPos controllerPos = new ExtendedPos(pos, worldIn.dimension.getType().getId());
+                StargateControllerTileEntity controller = (StargateControllerTileEntity) worldIn.getTileEntity(pos);
+                StargateBaseTileEntity base = (StargateBaseTileEntity) worldIn.getTileEntity(controller.getLinkedStargate());
+                Minecraft.getInstance().displayGuiScreen(new StargateControllerScreen(controllerPos, state.get(STATUS), base.hasChevronUpgrade()));
             } else {
                 player.sendMessage(new TextComponentString(state.get(STATUS).toString()));
             }
@@ -104,6 +108,7 @@ public class StargateControllerBlock extends Block implements ISpecialItemRender
 
     @Override
     public void onBlockAdded(IBlockState state, World worldIn, BlockPos pos, IBlockState oldState) {
+        if (worldIn.isRemote) return;
         StargateControllerTileEntity controller = (StargateControllerTileEntity) worldIn.getTileEntity(pos);
         controller.getLinkedStargateTE(worldIn);
     }

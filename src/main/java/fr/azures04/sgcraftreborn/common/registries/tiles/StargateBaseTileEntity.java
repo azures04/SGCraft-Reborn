@@ -15,6 +15,8 @@ import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.network.NetworkManager;
+import net.minecraft.network.play.server.SPacketUpdateTileEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityType;
@@ -30,6 +32,8 @@ import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
 import net.minecraft.world.dimension.DimensionType;
 import org.apache.logging.log4j.Level;
+
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
@@ -369,6 +373,7 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable {
 
     public void disconnect() {
         String targetAddress = this.getDialledAddress();
+
         this.setVortexState(StargateVortexState.CLOSING);
         this.setLocationPos(null);
         this.setDialledAddress("");
@@ -376,10 +381,14 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable {
         this.timeout = 0;
         this.markDirty();
 
-        StargateBaseTileEntity remoteGate = getRemoteGate(targetAddress);
+        if (targetAddress != null && !targetAddress.isEmpty()) {
+            StargateBaseTileEntity remoteGate = getRemoteGate(targetAddress);
 
-        if (remoteGate.getVortexState() != StargateVortexState.CLOSING && remoteGate.getVortexState() != StargateVortexState.IDLE) {
-            remoteGate.disconnect();
+            if (remoteGate != null) {
+                if (remoteGate.getVortexState() != StargateVortexState.CLOSING && remoteGate.getVortexState() != StargateVortexState.IDLE) {
+                    remoteGate.disconnect();
+                }
+            }
         }
     }
 
@@ -408,13 +417,18 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable {
     }
 
     public void startDialing(String targetAddress, ExtendedPos targetLocation, boolean isInitiator) {
-        setVortexState(StargateVortexState.DIALLING);
-        setDialledAddress(targetAddress);
-        setLocationPos(targetLocation);
-        setInitiator(isInitiator);
-        this.timeout = DIALLING_TIME;
-        System.out.println("Dialing...");
-        this.markDirty();
+        if (getAddress().startsWith(targetAddress)) {
+            disconnect();
+            throw StargateAddressing.StargateAddressingException.CANT_DIAL_SAME_GATE;
+        } else {
+            setVortexState(StargateVortexState.DIALLING);
+            setDialledAddress(targetAddress);
+            setLocationPos(targetLocation);
+            setInitiator(isInitiator);
+            this.timeout = DIALLING_TIME;
+            System.out.println("Dialing...");
+            this.markDirty();
+        }
     }
 
     @Override
@@ -652,6 +666,24 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable {
                 this.markDirty();
             }
         }
+    }
+
+    @Override
+    public SPacketUpdateTileEntity getUpdatePacket() {
+        NBTTagCompound nbt = new NBTTagCompound();
+        this.write(nbt);
+        return new SPacketUpdateTileEntity(this.pos, 1, nbt);
+    }
+
+    @Override
+    public void onDataPacket(NetworkManager net, SPacketUpdateTileEntity pkt) {
+        this.read(pkt.getNbtCompound());
+        super.onDataPacket(net, pkt);
+    }
+
+    @Override
+    public NBTTagCompound getUpdateTag() {
+        return this.write(new NBTTagCompound());
     }
 
 }

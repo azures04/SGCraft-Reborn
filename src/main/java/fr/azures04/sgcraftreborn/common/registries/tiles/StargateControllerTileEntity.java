@@ -12,6 +12,8 @@ import fr.azures04.sgcraftreborn.common.world.data.StargateWorldData;
 import fr.azures04.sgcraftreborn.common.util.math.ExtendedPos;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.network.NetworkManager;
+import net.minecraft.network.play.server.SPacketUpdateTileEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityType;
@@ -24,13 +26,13 @@ import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.LogicalSidedProvider;
 import org.apache.logging.log4j.Level;
 
+import javax.annotation.Nullable;
 import java.util.Objects;
 
 public class StargateControllerTileEntity extends TileEntity {
 
     private double fuelLevel;
     private ExtendedPos linkedStargate;
-    private boolean isGateBusy;
 
     public StargateControllerTileEntity() {
         super(ModTilesEntities.STARGATE_CONTROLLER_BLOCK);
@@ -85,7 +87,7 @@ public class StargateControllerTileEntity extends TileEntity {
                 return;
             }
         }
-        linkedStargate = new ExtendedPos(gate.getPos(), world.getDimension().getType().getId());
+        setLinkedStargate(new ExtendedPos(gate.getPos(), world.getDimension().getType().getId()));
         gate.setControllerPos(new ExtendedPos(pos, world.getDimension().getType().getId()));
         IBlockState state = world.getBlockState(pos);
         world.setBlockState(pos, state.with(StargateControllerBlock.STATUS, StargateControllerStatus.LINKED), 3);
@@ -106,7 +108,7 @@ public class StargateControllerTileEntity extends TileEntity {
     }
 
     public void unlink() {
-        linkedStargate = null;
+        setLinkedStargate(null);
         IBlockState state = world.getBlockState(pos);
         world.setBlockState(pos, state.with(StargateControllerBlock.STATUS, StargateControllerStatus.UNLINKED), 3);
         markDirty();
@@ -224,5 +226,23 @@ public class StargateControllerTileEntity extends TileEntity {
             }
         }
         super.remove();
+    }
+
+    @Override
+    public SPacketUpdateTileEntity getUpdatePacket() {
+        NBTTagCompound nbt = new NBTTagCompound();
+        this.write(nbt);
+        return new SPacketUpdateTileEntity(this.pos, 1, nbt);
+    }
+
+    @Override
+    public void onDataPacket(NetworkManager net, SPacketUpdateTileEntity pkt) {
+        this.read(pkt.getNbtCompound());
+        super.onDataPacket(net, pkt);
+    }
+
+    @Override
+    public NBTTagCompound getUpdateTag() {
+        return this.write(new NBTTagCompound());
     }
 }

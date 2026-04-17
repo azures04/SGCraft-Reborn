@@ -2,8 +2,9 @@ package fr.azures04.sgcraftreborn.client.screens;
 
 import fr.azures04.sgcraftreborn.SGCraftReborn;
 import fr.azures04.sgcraftreborn.common.network.StargateNetwork;
+import fr.azures04.sgcraftreborn.common.network.packets.StargateCloseVortexPacket;
 import fr.azures04.sgcraftreborn.common.network.packets.StargateDialPacket;
-import fr.azures04.sgcraftreborn.common.registries.tiles.StargateControllerTileEntity;
+import fr.azures04.sgcraftreborn.common.registries.blocks.states.StargateControllerStatus;
 import fr.azures04.sgcraftreborn.common.util.math.ExtendedPos;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiScreen;
@@ -12,7 +13,6 @@ import net.minecraft.util.ResourceLocation;
 
 import fr.azures04.sgcraftreborn.common.Constants;
 import fr.azures04.sgcraftreborn.common.world.StargateAddressing;
-import net.minecraft.world.World;
 import org.apache.logging.log4j.Level;
 
 public class StargateControllerScreen extends GuiScreen {
@@ -36,12 +36,20 @@ public class StargateControllerScreen extends GuiScreen {
 
     private int dhdCentreX, dhdCentreY, dhdTop;
     private String enteredAddress = "";
-    private int addressLength = 9;
+    private int addressLength = 7;
     private final ExtendedPos controllerPos;
+    private final StargateControllerStatus status;
 
-    public StargateControllerScreen(ExtendedPos controllerPos) {
+    public StargateControllerScreen(ExtendedPos controllerPos, StargateControllerStatus status, boolean hasChevronUpgrade) {
         super();
         this.controllerPos = controllerPos;
+        this.status = status;
+        if (status != StargateControllerStatus.LINKED) {
+            addressLength = 0;
+        }
+        if (hasChevronUpgrade) {
+            addressLength = 9;
+        }
     }
 
     @Override
@@ -83,16 +91,35 @@ public class StargateControllerScreen extends GuiScreen {
     private void drawOrangeButton() {
         this.mc.getTextureManager().bindTexture(CENTRE_TEXTURE);
 
-        GlStateManager.color4f(0.5F, 0.25F, 0.0F, 1.0F); // Inactif
+        switch (status) {
+            case LINKED:
+                GlStateManager.color4f(0.5F, 0.25F, 0.0F, 1.0F);
+                break;
+            case ACTIVATED:
+                GlStateManager.color4f(1.0F, 0.5F, 0.0F, 1.0F);
+                break;
+            case UNLINKED:
+                GlStateManager.color4f(0.2F, 0.2F, 0.2F, 1.0F);
+                break;
+        }
 
         double rx = dhdWidth * 48 / 512.0;
         double ry = dhdHeight * 48 / 256.0;
 
-        Gui.drawScaledCustomSizeModalRect(dhdCentreX - (int)rx, dhdCentreY - (int)ry - 6,64, 0, 64, 48, (int)(2 * rx), (int)(1.5 * ry), 128, 64);
+        Gui.drawScaledCustomSizeModalRect(dhdCentreX - (int)rx, dhdCentreY - (int)ry - 6, 64, 0, 64, 48, (int)(2 * rx), (int)(1.5 * ry), 128, 64);
 
-        GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F); // Reset de la couleur
+        if (status == StargateControllerStatus.ACTIVATED) {
+            GlStateManager.blendFunc(GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ONE);
+            GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F); // Reset couleur pour la texture de lueur
+
+            double d = 5;
+            Gui.drawScaledCustomSizeModalRect(dhdCentreX - (int)(rx + d), dhdCentreY - (int)(ry + d) - 6, 0, 0, 64, 32, (int)(2 * (rx + d)), (int)(ry + d), 128, 64);
+            Gui.drawScaledCustomSizeModalRect(dhdCentreX - (int)(rx + d), dhdCentreY - 6, 0, 32, 64, 32, (int)(2 * (rx + d)), (int)(0.5 * ry + d), 128, 64);
+            GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+        }
+
+        GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F); // Reset final
     }
-
     private void drawEnteredSymbols() {
         if (enteredAddress.isEmpty()) return;
 
@@ -166,12 +193,19 @@ public class StargateControllerScreen extends GuiScreen {
 
     private void dhdButtonPressed(int id) {
         buttonSound();
+        SGCraftReborn.LOGGER.log(Level.INFO, "buttonId: " + id);
         if (id == 0) {
-            if (enteredAddress.length() == 7 || enteredAddress.length() == 9) {
-                System.out.println("DIALLING: " + enteredAddress);
-                StargateNetwork.INSTANCE.sendToServer(new StargateDialPacket(this.controllerPos, this.enteredAddress));
-                this.close();
+            switch (status) {
+                case LINKED:
+                    if (enteredAddress.length() == 7 || enteredAddress.length() == 9) {
+                        StargateNetwork.INSTANCE.sendToServer(new StargateDialPacket(this.controllerPos, this.enteredAddress));
+                    }
+                    break;
+                case ACTIVATED:
+                    StargateNetwork.INSTANCE.sendToServer(new StargateCloseVortexPacket(this.controllerPos));
+                    break;
             }
+            this.close();
         } else if (id >= 37) {
             backspace();
         } else {
@@ -198,7 +232,11 @@ public class StargateControllerScreen extends GuiScreen {
         if (keyCode == 256) {
             this.close();
             return true;
-        } else if (keyCode == 259 || keyCode == 261) {
+        }
+        if (this.status == StargateControllerStatus.LINKED) {
+
+        }
+        if (keyCode == 259 || keyCode == 261) {
             backspace();
             return true;
         } else if (keyCode == 257 || keyCode == 335) {
