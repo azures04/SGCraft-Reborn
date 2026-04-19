@@ -63,11 +63,11 @@ public class StargateChevronBlock extends Block {
 
     @Override
     public void onReplaced(IBlockState state, World worldIn, BlockPos pos, IBlockState newState, boolean isMoving) {
-        if (!worldIn.isRemote) {
-            if (state.getBlock() != newState.getBlock()) {
+        if (state.getBlock() != newState.getBlock()) {
+            if (!worldIn.isRemote) {
                 StargateStructure.notifyNearbyBases(worldIn, pos);
             }
+            super.onReplaced(state, worldIn, pos, newState, isMoving);
         }
-        super.onReplaced(state, worldIn, pos, newState, isMoving);
     }
 }

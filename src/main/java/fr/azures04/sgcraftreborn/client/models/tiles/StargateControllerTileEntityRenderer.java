@@ -12,7 +12,7 @@ import net.minecraft.util.ResourceLocation;
 
 import java.util.Map;
 
-public class  StargateControllerTileEntityRenderer extends TileEntityRenderer<StargateControllerTileEntity> {
+public class StargateControllerTileEntityRenderer extends TileEntityRenderer<StargateControllerTileEntity> {
 
     private final ESMEGModel model;
 

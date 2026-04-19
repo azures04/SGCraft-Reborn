@@ -1,14 +1,18 @@
 package fr.azures04.sgcraftreborn;
 
+import fr.azures04.sgcraftreborn.client.models.tiles.StargateBaseTileEntityRenderer;
 import fr.azures04.sgcraftreborn.client.models.tiles.StargateControllerTileEntityRenderer;
+import fr.azures04.sgcraftreborn.client.registries.ModContainers;
 import fr.azures04.sgcraftreborn.common.Constants;
 import fr.azures04.sgcraftreborn.common.config.SGCraftRebornConfig;
 import fr.azures04.sgcraftreborn.common.config.conditions.CraftingConditions;
 import fr.azures04.sgcraftreborn.common.network.StargateNetwork;
 import fr.azures04.sgcraftreborn.common.registries.ModRegistry;
+import fr.azures04.sgcraftreborn.common.registries.tiles.StargateBaseTileEntity;
 import fr.azures04.sgcraftreborn.common.registries.tiles.StargateControllerTileEntity;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.crafting.CraftingHelper;
+import net.minecraftforge.fml.ExtensionPoint;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
 import net.minecraftforge.fml.common.Mod;
@@ -34,11 +38,12 @@ public class SGCraftReborn {
     }
 
     private void setup(final FMLCommonSetupEvent event) {
-        LOGGER.info("SGCraft Reborn : Initialisation commune...");
         StargateNetwork.registerPackets();
     }
 
     private void clientSetup(final FMLClientSetupEvent event) {
+        ModLoadingContext.get().registerExtensionPoint(ExtensionPoint.GUIFACTORY,() -> ModContainers::openContainer);
         ClientRegistry.bindTileEntitySpecialRenderer(StargateControllerTileEntity.class, new StargateControllerTileEntityRenderer());
+        ClientRegistry.bindTileEntitySpecialRenderer(StargateBaseTileEntity.class, new StargateBaseTileEntityRenderer());
     }
 }

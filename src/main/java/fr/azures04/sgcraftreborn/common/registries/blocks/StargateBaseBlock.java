@@ -1,14 +1,19 @@
 package fr.azures04.sgcraftreborn.common.registries.blocks;
 
 import fr.azures04.sgcraftreborn.SGCraftReborn;
+import fr.azures04.sgcraftreborn.client.screens.StargateControllerScreen;
 import fr.azures04.sgcraftreborn.common.config.SGCraftRebornConfig;
 import fr.azures04.sgcraftreborn.common.registries.ModBlocks;
 import fr.azures04.sgcraftreborn.common.registries.ModItems;
 import fr.azures04.sgcraftreborn.common.registries.structures.StargateStructure;
 import fr.azures04.sgcraftreborn.common.registries.tiles.StargateBaseTileEntity;
+import fr.azures04.sgcraftreborn.common.registries.tiles.StargateControllerTileEntity;
+import fr.azures04.sgcraftreborn.common.util.math.ExtendedPos;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.inventory.InventoryHelper;
 import net.minecraft.item.BlockItemUseContext;
 import net.minecraft.item.ItemStack;
@@ -23,7 +28,9 @@ import net.minecraft.util.EnumHand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.IBlockReader;
+import net.minecraft.world.IInteractionObject;
 import net.minecraft.world.World;
+import net.minecraftforge.fml.network.NetworkHooks;
 import org.apache.logging.log4j.Level;
 
 import javax.annotation.Nullable;
@@ -95,15 +102,17 @@ public class StargateBaseBlock extends Block {
 
     @Override
     public void onReplaced(IBlockState state, World worldIn, BlockPos pos, IBlockState newState, boolean isMoving) {
-        if (worldIn.isRemote) return;
-        StargateBaseTileEntity base = (StargateBaseTileEntity) worldIn.getTileEntity(pos);
-        if (base != null) {
-            if (state.getBlock() != newState.getBlock()) {
-                StargateStructure.showStructure(worldIn, pos, state.get(FACING));
-                if (base.isMerged()) {
-                    if (SGCraftRebornConfig.LOG_STARGATE_EVENTS.get()) {
+        if (state.getBlock() != newState.getBlock()) {
+
+            if (!worldIn.isRemote) {
+                StargateBaseTileEntity base = (StargateBaseTileEntity) worldIn.getTileEntity(pos);
+                if (base != null) {
+                    StargateStructure.showStructure(worldIn, pos, state.get(FACING));
+
+                    if (SGCraftRebornConfig.LOG_STARGATE_EVENTS.get() && base.isMerged()) {
                         SGCraftReborn.LOGGER.log(Level.INFO, String.format("STARGATE REMOVED DIM: %s, X: %d Y: %d Z: %d", worldIn.dimension.getType().getId(), pos.getX(), pos.getY(), pos.getZ()));
                     }
+
                     if (base.hasChevronUpgrade()) {
                         InventoryHelper.spawnItemStack(worldIn, pos.getX(), pos.getY(), pos.getZ(), new ItemStack(ModItems.STARGATE_CHEVRON_UPGRADE));
                         base.setHasChevronUpgrade(false);
@@ -114,8 +123,8 @@ public class StargateBaseBlock extends Block {
                     }
                 }
             }
+            super.onReplaced(state, worldIn, pos, newState, isMoving);
         }
-        super.onReplaced(state, worldIn, pos, newState, isMoving);
     }
 
     @Override
@@ -123,27 +132,32 @@ public class StargateBaseBlock extends Block {
         if (worldIn.isRemote) return true;
         StargateBaseTileEntity base = (StargateBaseTileEntity) worldIn.getTileEntity(pos);
 
-        if (base != null) {
-            if (hand == EnumHand.MAIN_HAND) {
-                player.sendMessage(new TextComponentString("VORTEX STATE : " + base.getVortexState()));
-                player.sendMessage(new TextComponentString("LOCAL ADDRESS : " + base.getAddress()));
-                player.sendMessage(new TextComponentString("REMOTE ADDRESS : " + base.getDialledAddress()));
-                player.sendMessage(new TextComponentString("TIMEOUT : " + base.timeout));
-                player.sendMessage(new TextComponentString("HAS IRIS : " + base.hasIrisUpgrade()));
-                player.sendMessage(new TextComponentString("IRIS STATE : " + base.getIrisState()));
-                player.sendMessage(new TextComponentString("HAS CHEVRON : " + base.hasChevronUpgrade()));
-            }
+        if (base != null) {;
             if (player.isSneaking()) {
                 if (player.getHeldItem(hand).getItem() == ModItems.STARGATE_CHEVRON_UPGRADE) {
-                    base.setHasChevronUpgrade(true);
-                    if (!player.isCreative()) {
-                        player.getHeldItem(hand).shrink(1);
+                    if (!base.hasChevronUpgrade()) {
+                        base.setHasChevronUpgrade(true);
+                        if (!player.isCreative()) {
+                            player.getHeldItem(hand).shrink(1);
+                        }
                     }
                 }
                 if (player.getHeldItem(hand).getItem() == ModItems.STARGATE_IRIS_UPGRADE) {
-                    base.setHasIrisUpgrade(true);
-                    if (!player.isCreative()) {
-                        player.getHeldItem(hand).shrink(1);
+                    if (!base.hasIrisUpgrade()) {
+                        base.setHasIrisUpgrade(true);
+                        if (!player.isCreative()) {
+                            player.getHeldItem(hand).shrink(1);
+                        }
+                    }
+                }
+            } else {
+                if (hand == EnumHand.MAIN_HAND) {
+                    if (base.isMerged()) {
+                        NetworkHooks.openGui((EntityPlayerMP) player, (IInteractionObject) base, pos);
+                    } else {
+                        player.sendMessage(new TextComponentString("LOCAL ADDRESS : " + base.getAddress()));
+                        player.sendMessage(new TextComponentString("REMOTE ADDRESS : " + base.getDialledAddress()));
+                        player.sendMessage(new TextComponentString("IS INITIATOR : " + base.isInitiator()));
                     }
                 }
             }
@@ -163,4 +177,5 @@ public class StargateBaseBlock extends Block {
         }
         super.neighborChanged(state, worldIn, pos, blockIn, fromPos);
     }
+
 }

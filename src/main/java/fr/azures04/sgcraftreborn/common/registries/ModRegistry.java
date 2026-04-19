@@ -17,6 +17,8 @@ public class ModRegistry {
         ModBlocks.BLOCKS_TO_REGISTER.forEach(event.getRegistry()::register);
     }
 
+
+
     @SubscribeEvent
     public static void onItemsRegistry(final RegistryEvent.Register<Item> event) {
         IForgeRegistry<Item> registry = event.getRegistry();

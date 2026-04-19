@@ -1,9 +1,10 @@
 package fr.azures04.sgcraftreborn.common.registries.tiles;
 
 import fr.azures04.sgcraftreborn.SGCraftReborn;
+import fr.azures04.sgcraftreborn.common.Constants;
 import fr.azures04.sgcraftreborn.common.config.SGCraftRebornConfig;
+import fr.azures04.sgcraftreborn.common.inventories.StargateControllerFuelContainer;
 import fr.azures04.sgcraftreborn.common.registries.ModTilesEntities;
-import fr.azures04.sgcraftreborn.common.registries.blocks.StargateBaseBlock;
 import fr.azures04.sgcraftreborn.common.registries.blocks.StargateControllerBlock;
 import fr.azures04.sgcraftreborn.common.registries.blocks.states.StargateControllerStatus;
 import fr.azures04.sgcraftreborn.common.registries.tiles.states.StargateVortexState;
@@ -11,28 +12,42 @@ import fr.azures04.sgcraftreborn.common.world.StargateAddressing;
 import fr.azures04.sgcraftreborn.common.world.data.StargateWorldData;
 import fr.azures04.sgcraftreborn.common.util.math.ExtendedPos;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.InventoryPlayer;
+import net.minecraft.inventory.Container;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.play.server.SPacketUpdateTileEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityType;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.TextComponentTranslation;
+import net.minecraft.world.IInteractionObject;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
 import net.minecraft.world.dimension.DimensionType;
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.LogicalSidedProvider;
-import org.apache.logging.log4j.Level;
+import net.minecraftforge.items.CapabilityItemHandler;
+import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.ItemStackHandler;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Objects;
 
-public class StargateControllerTileEntity extends TileEntity {
+public class StargateControllerTileEntity extends TileEntity implements IInteractionObject {
 
     private double fuelLevel;
     private ExtendedPos linkedStargate;
+    private final ItemStackHandler inventory = new ItemStackHandler(4);
+    private final LazyOptional<IItemHandler> inventoryHolder = LazyOptional.of(() -> inventory);
 
     public StargateControllerTileEntity() {
         super(ModTilesEntities.STARGATE_CONTROLLER_BLOCK);
@@ -173,7 +188,7 @@ public class StargateControllerTileEntity extends TileEntity {
             throw StargateAddressing.StargateAddressingException.NOT_AT_THIS_ADDRESS;
         }
 
-        MinecraftServer server = LogicalSidedProvider.INSTANCE.get(LogicalSide.SERVER);
+        MinecraftServer server = world.getServer();
         WorldServer remoteWorld = server.getWorld(DimensionType.getById(remotePos.getDimension()));
         TileEntity remoteTe = remoteWorld.getTileEntity(remotePos.getPos());
         if (!(remoteTe instanceof StargateBaseTileEntity)) {
@@ -197,9 +212,6 @@ public class StargateControllerTileEntity extends TileEntity {
         }
 
         localGate.startDialing(address, remotePos, true);
-
-        ExtendedPos localPos = new ExtendedPos(localGate.getPos(), world.getDimension().getType().getId());
-        remoteGate.startDialing(localGate.getAddress(), localPos, false);
 
         return null;
     }
@@ -245,4 +257,46 @@ public class StargateControllerTileEntity extends TileEntity {
     public NBTTagCompound getUpdateTag() {
         return this.write(new NBTTagCompound());
     }
+
+    @Override
+    public Container createContainer(InventoryPlayer playerInventory, EntityPlayer playerIn) {
+        return new StargateControllerFuelContainer(playerInventory, this.pos);
+    }
+
+    @Override
+    public String getGuiID() {
+        return Constants.MOD_ID + ":controller_fuel";
+    }
+
+    @Override
+    public ITextComponent getName() {
+        return new TextComponentTranslation("container.sgcraftreborn.dhd");
+    }
+
+    @Override
+    public boolean hasCustomName() {
+        return false;
+    }
+
+    @Nullable
+    @Override
+    public ITextComponent getCustomName() {
+        return null;
+    }
+
+    @Nonnull
+    @Override
+    public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable EnumFacing side) {
+        if (cap == CapabilityItemHandler.ITEM_HANDLER_CAPABILITY) {
+            return inventoryHolder.cast();
+        }
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    protected void invalidateCaps() {
+        super.invalidateCaps();
+        inventoryHolder.invalidate();
+    }
+
 }

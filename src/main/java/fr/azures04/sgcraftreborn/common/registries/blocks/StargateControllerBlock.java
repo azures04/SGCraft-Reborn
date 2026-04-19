@@ -1,7 +1,9 @@
 package fr.azures04.sgcraftreborn.common.registries.blocks;
 
+import fr.azures04.sgcraftreborn.SGCraftReborn;
 import fr.azures04.sgcraftreborn.client.models.ISpecialItemRenderer;
 import fr.azures04.sgcraftreborn.client.models.tiles.items.StargateControllerISTER;
+import fr.azures04.sgcraftreborn.client.registries.ModContainers;
 import fr.azures04.sgcraftreborn.client.screens.StargateControllerScreen;
 import fr.azures04.sgcraftreborn.common.registries.blocks.states.StargateControllerStatus;
 import fr.azures04.sgcraftreborn.common.registries.tiles.StargateBaseTileEntity;
@@ -12,7 +14,10 @@ import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.tileentity.TileEntityItemStackRenderer;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.inventory.InventoryHelper;
 import net.minecraft.item.BlockItemUseContext;
+import net.minecraft.item.ItemStack;
 import net.minecraft.state.DirectionProperty;
 import net.minecraft.state.EnumProperty;
 import net.minecraft.state.StateContainer;
@@ -24,7 +29,11 @@ import net.minecraft.util.EnumHand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.IBlockReader;
+import net.minecraft.world.IInteractionObject;
 import net.minecraft.world.World;
+import net.minecraftforge.fml.network.NetworkHooks;
+import net.minecraftforge.items.CapabilityItemHandler;
+import org.apache.logging.log4j.Level;
 
 import javax.annotation.Nullable;
 import java.util.concurrent.Callable;
@@ -99,11 +108,25 @@ public class StargateControllerBlock extends Block implements ISpecialItemRender
                 StargateControllerTileEntity controller = (StargateControllerTileEntity) worldIn.getTileEntity(pos);
                 StargateBaseTileEntity base = (StargateBaseTileEntity) worldIn.getTileEntity(controller.getLinkedStargate());
                 Minecraft.getInstance().displayGuiScreen(new StargateControllerScreen(controllerPos, state.get(STATUS), base.hasChevronUpgrade()));
-            } else {
-                player.sendMessage(new TextComponentString(state.get(STATUS).toString()));
+                return true;
             }
         }
-        return false;
+
+        if (!worldIn.isRemote) {
+            EnumFacing blockFacing = state.get(FACING);
+            if (side == blockFacing.getOpposite()) {
+                TileEntity te = worldIn.getTileEntity(pos);
+                if (te instanceof StargateControllerTileEntity) {
+                    NetworkHooks.openGui((EntityPlayerMP) player, (IInteractionObject) te, pos);
+                    return true;
+                }
+            } else if (side != EnumFacing.UP) {
+                player.sendMessage(new TextComponentString(state.get(STATUS).toString()));
+                return true;
+            }
+        }
+
+        return true;
     }
 
     @Override
@@ -113,5 +136,23 @@ public class StargateControllerBlock extends Block implements ISpecialItemRender
         controller.getLinkedStargateTE(worldIn);
     }
 
-
+    @Override
+    public void onReplaced(IBlockState state, World worldIn, BlockPos pos, IBlockState newState, boolean isMoving) {
+        if (worldIn.isRemote) return;
+        if (state.getBlock() != newState.getBlock()) {
+            TileEntity te = worldIn.getTileEntity(pos);
+            if (te instanceof StargateControllerTileEntity) {
+                StargateControllerTileEntity controller = (StargateControllerTileEntity) te;
+                controller.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY).ifPresent(inventory -> {
+                    for (int i = 0; i < inventory.getSlots(); i++) {
+                        ItemStack stack = inventory.getStackInSlot(i);
+                        if (!stack.isEmpty()) {
+                            InventoryHelper.spawnItemStack(worldIn, pos.getX(), pos.getY(), pos.getZ(), stack);
+                        }
+                    }
+                });
+            }
+        }
+        super.onReplaced(state, worldIn, pos, newState, isMoving);
+    }
 }

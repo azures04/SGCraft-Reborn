@@ -15,7 +15,11 @@ public class NaquadahFuelSlot extends SlotItemHandler {
 
     @Override
     public boolean isItemValid(@Nonnull ItemStack stack) {
-        return stack.getItem() == ModItems.NAQUADAH.getItem();
+        return isFuel(stack);
+    }
+
+    public static boolean isFuel(ItemStack stack) {
+        return stack.getItem() == ModItems.NAQUADAH;
     }
 
 
