@@ -44,19 +44,19 @@ public class StargateWorldData extends WorldSavedData {
     }
 
     @Override
-    public NBTTagCompound write(NBTTagCompound nbt) {
+    public NBTTagCompound write(NBTTagCompound compound) {
         NBTTagList list = new NBTTagList();
         for (Map.Entry<String, ExtendedPos> entry : stargates.entrySet()) {
             NBTTagCompound tag = new NBTTagCompound();
-            tag.setString("a", entry.getKey());
-            tag.setInt("x", entry.getValue().getX());
-            tag.setInt("y", entry.getValue().getY());
-            tag.setInt("z", entry.getValue().getZ());
-            tag.setInt("d", entry.getValue().getDimension());
+            compound.putString("a", entry.getKey());
+            compound.putInt("x", entry.getValue().getX());
+            compound.putInt("y", entry.getValue().getY());
+            compound.putInt("z", entry.getValue().getZ());
+            compound.putInt("d", entry.getValue().getDimension());
             list.add(tag);
         }
-        nbt.setTag("stargates", list);
-        return nbt;
+        compound.put("stargates", list);
+        return compound;
     }
 
     public void register(String address, ExtendedPos pos) {
@@ -70,12 +70,12 @@ public class StargateWorldData extends WorldSavedData {
     }
 
     public static StargateWorldData get(World world) {
-        WorldSavedDataStorage storage = ((WorldServer) world).getMapStorage();
+        WorldSavedDataStorage storage = ((WorldServer) world).getSavedDataStorage();
         DimensionType dimension = world.getDimension().getType();
-        StargateWorldData data = storage.func_212426_a(dimension, StargateWorldData::new, NAME);
+        StargateWorldData data = storage.get(dimension, StargateWorldData::new, NAME);
         if (data == null) {
             data = new StargateWorldData();
-            storage.func_212424_a(dimension, NAME, data);
+            storage.set(dimension, NAME, data);
         }
         return data;
     }
@@ -107,7 +107,7 @@ public class StargateWorldData extends WorldSavedData {
     }
 
     public static ExtendedPos findStargateUniversally(MinecraftServer server, String address) {
-        for (WorldServer targetWorld : server.func_212370_w()) {
+        for (WorldServer targetWorld : server.getWorlds()) {
             StargateWorldData data = StargateWorldData.get(targetWorld);
             if (data.exists(address)) {
                 return data.findStargate(address);

@@ -101,32 +101,32 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
 
     @Override
     public NBTTagCompound write(NBTTagCompound compound) {
-        compound.setBoolean("isMerged", isMerged);
-        compound.setBoolean("isInitiator", isInitiator);
-        compound.setString("dialledAddress", dialledAddress == null ? "" : dialledAddress);
-        compound.setString("address", address == null ? "" : address);
-        compound.setDouble("energyInBuffer", energyInBuffer);
-        compound.setInt("numEngagedChevrons", numEngagedChevrons);
-        compound.setBoolean("hasChevronUpgrade", hasChevronUpgrade);
-        compound.setBoolean("hasIrisUpgrade", hasIrisUpgrade);
-        compound.setInt("irisState", irisState != null ? irisState.ordinal() : 0);
-        compound.setInt("irisTimeout", irisTimeout);
-        compound.setInt("vortexState", vortexState != null ? vortexState.ordinal() : 0);
-        compound.setInt("timeout", timeout);
+        compound.putBoolean("isMerged", isMerged);
+        compound.putBoolean("isInitiator", isInitiator);
+        compound.putString("dialledAddress", dialledAddress == null ? "" : dialledAddress);
+        compound.putString("address", address == null ? "" : address);
+        compound.putDouble("energyInBuffer", energyInBuffer);
+        compound.putInt("numEngagedChevrons", numEngagedChevrons);
+        compound.putBoolean("hasChevronUpgrade", hasChevronUpgrade);
+        compound.putBoolean("hasIrisUpgrade", hasIrisUpgrade);
+        compound.putInt("irisState", irisState != null ? irisState.ordinal() : 0);
+        compound.putInt("irisTimeout", irisTimeout);
+        compound.putInt("vortexState", vortexState != null ? vortexState.ordinal() : 0);
+        compound.putInt("timeout", timeout);
 
         if (connectedLoc != null) {
-            compound.setInt("connectedX", connectedLoc.getX());
-            compound.setInt("connectedY", connectedLoc.getY());
-            compound.setInt("connectedZ", connectedLoc.getZ());
-            compound.setInt("connectedD", connectedLoc.getDimension());
+            compound.putInt("connectedX", connectedLoc.getX());
+            compound.putInt("connectedY", connectedLoc.getY());
+            compound.putInt("connectedZ", connectedLoc.getZ());
+            compound.putInt("connectedD", connectedLoc.getDimension());
         }
         if (controllerPos != null) {
-            compound.setInt("controllerX", controllerPos.getX());
-            compound.setInt("controllerY", controllerPos.getY());
-            compound.setInt("controllerZ", controllerPos.getZ());
+            compound.putInt("controllerX", controllerPos.getX());
+            compound.putInt("controllerY", controllerPos.getY());
+            compound.putInt("controllerZ", controllerPos.getZ());
         }
-        compound.setTag("inventory", inventory.serializeNBT());
-        compound.setDouble("distanceFactor", distanceFactor);
+        compound.put("inventory", inventory.serializeNBT());
+        compound.putDouble("distanceFactor", distanceFactor);
         return super.write(compound);
     }
 
@@ -614,7 +614,7 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
 
         for (int x = -range; x <= range; x++) {
             for (int z = -range; z <= range; z++) {
-                world.func_212414_b(centerPos.x + x, centerPos.z + z, load);
+                world.setChunkForced(centerPos.x + x, centerPos.z + z, load);
             }
         }
     }

@@ -147,14 +147,14 @@ public class StargateControllerTileEntity extends TileEntity implements IInterac
 
     @Override
     public NBTTagCompound write(NBTTagCompound compound) {
-        compound.setDouble("fuelLevel", fuelLevel);
+        compound.putDouble("fuelLevel", fuelLevel);
         if (linkedStargate != null) {
-            compound.setInt("connectedX", linkedStargate.getX());
-            compound.setInt("connectedY", linkedStargate.getY());
-            compound.setInt("connectedZ", linkedStargate.getZ());
-            compound.setInt("connectedD", linkedStargate.getDimension());
+            compound.putInt("connectedX", linkedStargate.getX());
+            compound.putInt("connectedY", linkedStargate.getY());
+            compound.putInt("connectedZ", linkedStargate.getZ());
+            compound.putInt("connectedD", linkedStargate.getDimension());
         }
-        compound.setTag("inventory", inventory.serializeNBT());
+        compound.put("inventory", inventory.serializeNBT());
         return super.write(compound);
     }
 

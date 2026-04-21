@@ -19,7 +19,7 @@ archivesBaseName = "sgcraftreborn"
 sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = "1.8"
 
 minecraft {
-    mappings channel: "snapshot", version: "20180921-1.13"
+    mappings channel: "stable", version: "47-1.13.2"
     runs {
         client {
             workingDirectory project.file("run/client")
@@ -58,7 +58,7 @@ repositories {
 
 dependencies {
     minecraft "net.minecraftforge:forge:1.13.2-25.0.223"
-    implementation fg.deobf("curse.maven:cctweaked-282001:2719219")
+    compileOnly "curse.maven:cctweaked-282001:2719219"
 }
 
 jar {

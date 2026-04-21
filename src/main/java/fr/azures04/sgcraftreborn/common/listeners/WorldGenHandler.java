@@ -20,11 +20,15 @@ public class WorldGenHandler {
 
     @SubscribeEvent
     public static void onChunkLoad(ChunkDataEvent.Load event) {
-        if (!SGCraftRebornConfig.ADD_ORES_TO_EXISTING_WORLDS.get()) return;
+        if (!SGCraftRebornConfig.ADD_ORES_TO_EXISTING_WORLDS.get()) {
+            return;
+        }
         NBTTagCompound nbt = event.getData();
-        if (nbt.getBoolean("sgcraft_naquadah_generated")) return;
+        if (nbt.getBoolean("sgcraft_naquadah_generated")) {
+            return;
+        }
         generateNaquadah(event.getChunk(), event.getWorld());
-        nbt.setBoolean("sgcraft_naquadah_generated", true);
+        nbt.putBoolean("sgcraft_naquadah_generated", true);
     }
 
     @SubscribeEvent

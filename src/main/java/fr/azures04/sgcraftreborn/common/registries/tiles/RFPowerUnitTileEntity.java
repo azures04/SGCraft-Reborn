@@ -49,7 +49,7 @@ public class RFPowerUnitTileEntity extends TileEntity implements ITickable, IInt
 
     @Override
     public NBTTagCompound write(NBTTagCompound compound) {
-        compound.setInt("energy", energyStorage.getEnergyStored());
+        compound.putInt("energy", energyStorage.getEnergyStored());
         return super.write(compound);
     }
 
