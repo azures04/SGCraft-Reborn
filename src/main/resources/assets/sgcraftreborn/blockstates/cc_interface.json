@@ -1,0 +1,25 @@
+{
+    "variants": {
+        "facing=north": {
+            "model": "sgcraftreborn:block/cc_interface"
+        },
+        "facing=south": {
+            "model": "sgcraftreborn:block/cc_interface",
+            "y": 180
+        },
+        "facing=west": {
+            "model": "sgcraftreborn:block/cc_interface",
+            "y": 270
+        },
+        "facing=east": {
+            "model": "sgcraftreborn:block/cc_interface",
+            "y": 90
+        },
+        "facing=up": {
+            "model": "sgcraftreborn:block/cc_interface"
+        },
+        "facing=down": {
+            "model": "sgcraftreborn:block/cc_interface"
+        }
+    }
+}

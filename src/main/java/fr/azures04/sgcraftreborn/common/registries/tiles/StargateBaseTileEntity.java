@@ -1,8 +1,9 @@
 package fr.azures04.sgcraftreborn.common.registries.tiles;
 
 import fr.azures04.sgcraftreborn.common.Constants;
+import fr.azures04.sgcraftreborn.common.api.StargateAbstractAPI;
 import fr.azures04.sgcraftreborn.common.config.SGCraftRebornConfig;
-import fr.azures04.sgcraftreborn.common.inventories.StargateBaseCamouflageContainer;
+import fr.azures04.sgcraftreborn.common.containers.StargateBaseCamouflageContainer;
 import fr.azures04.sgcraftreborn.common.registries.ModTilesEntities;
 import fr.azures04.sgcraftreborn.common.registries.blocks.StargateBaseBlock;
 import fr.azures04.sgcraftreborn.common.registries.structures.StargateStructure;
@@ -12,12 +13,15 @@ import fr.azures04.sgcraftreborn.common.util.math.ExtendedPos;
 import fr.azures04.sgcraftreborn.common.world.StargateAddressing;
 import fr.azures04.sgcraftreborn.common.world.StargateTeleporter;
 import fr.azures04.sgcraftreborn.common.world.data.StargateWorldData;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockSlab;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.Container;
+import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.play.server.SPacketUpdateTileEntity;
@@ -44,10 +48,20 @@ import net.minecraftforge.items.ItemStackHandler;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Random;
 
 public class StargateBaseTileEntity extends TileEntity implements ITickable, IInteractionObject {
+
+
+    private transient List<StargateAbstractAPI> computerAdapters = new ArrayList<>();
+
+    private static final float[][] CHEVRON_ANGLES = {
+        { 45f, 45f, 40f },
+        { 36f, 33f, 30f }
+    };
 
     static final int DIALLING_TIME = 40;
     static final int INTER_DIALLING_TIME = 10;
@@ -64,11 +78,26 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
     private StargateVortexState vortexState = StargateVortexState.IDLE;
     public int timeout, irisTimeout;
 
+    public ItemStackHandler getInventory() {
+        return inventory;
+    }
+
     private final ItemStackHandler inventory = new ItemStackHandler(5);
     private final LazyOptional<IItemHandler> inventoryHolder = LazyOptional.of(() -> inventory);
 
-    public StargateBaseTileEntity() { super(ModTilesEntities.STARGATE_BASE_BLOCK); }
-    public StargateBaseTileEntity(TileEntityType<?> tileEntityTypeIn) { super(tileEntityTypeIn); }
+    public final static int ehGridRadialSize = 5;
+    public final static int ehGridPolarSize = 32;
+    private double[][][] ehGrid;
+    private final Random random = new Random();
+    private double distanceFactor = 1.0;
+
+    public StargateBaseTileEntity() {
+        super(ModTilesEntities.STARGATE_BASE_BLOCK);
+    }
+
+    public StargateBaseTileEntity(TileEntityType<?> tileEntityTypeIn) {
+        super(tileEntityTypeIn);
+    }
 
     @Override
     public NBTTagCompound write(NBTTagCompound compound) {
@@ -96,6 +125,8 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
             compound.setInt("controllerY", controllerPos.getY());
             compound.setInt("controllerZ", controllerPos.getZ());
         }
+        compound.setTag("inventory", inventory.serializeNBT());
+        compound.setDouble("distanceFactor", distanceFactor);
         return super.write(compound);
     }
 
@@ -116,20 +147,134 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
         timeout = compound.getInt("timeout");
 
         if (compound.contains("connectedX", 3)) {
-            connectedLoc = new ExtendedPos(compound.getInt("connectedX"), compound.getInt("connectedY"),
-                    compound.getInt("connectedZ"), compound.getInt("connectedD"));
+            connectedLoc = new ExtendedPos(compound.getInt("connectedX"), compound.getInt("connectedY"), compound.getInt("connectedZ"), compound.getInt("connectedD"));
         }
         if (compound.contains("controllerX", 3)) {
             controllerPos = new BlockPos(compound.getInt("controllerX"), compound.getInt("controllerY"), compound.getInt("controllerZ"));
         }
+
+        if (compound.contains("inventory", 10)) {
+            inventory.deserializeNBT(compound.getCompound("inventory"));
+        }
+        distanceFactor = compound.contains("distanceFactor", 6) ? compound.getDouble("distanceFactor") : 1.0;
+    }
+
+    public double getEnergyToOpen() {
+        return (double) SGCraftRebornConfig.ENERGY_PER_FUEL_ITEM.get() / SGCraftRebornConfig.GATE_OPENINGS_PER_FUEL_ITEM.get();
+    }
+
+    public double getEnergyUsePerTick() {
+        return (double) SGCraftRebornConfig.ENERGY_PER_FUEL_ITEM.get() / (SGCraftRebornConfig.MINUTES_OPEN_PER_FUEL_ITEM.get() * 60 * 20);
+    }
+
+    public static double distanceFactorForCoordDifference(TileEntity te1, TileEntity te2) {
+        double dx = te1.getPos().getX() - te2.getPos().getX();
+        double dz = te1.getPos().getZ() - te2.getPos().getZ();
+        double d = Math.sqrt(dx * dx + dz * dz);
+
+        double ld = Math.log(0.05 * d + 1);
+        double lm = Math.log(0.05 * 16 * 1000000);
+        double lr = ld / lm;
+        double f = 1 + 14 * SGCraftRebornConfig.DISTANCE_FACTOR_MULTIPLIER.get() * lr * lr;
+
+        if (te1.getWorld().getDimension().getType().getId() != te2.getWorld().getDimension().getType().getId()) {
+            f *= SGCraftRebornConfig.INTER_DIMENSION_MULTIPLIER.get();
+        }
+        return f;
+    }
+
+    public boolean energyIsAvailable(double amount) {
+        double available = energyInBuffer;
+
+        if (controllerPos != null && world != null) {
+            TileEntity te = world.getTileEntity(controllerPos);
+            if (te instanceof StargateControllerTileEntity) {
+                available += ((StargateControllerTileEntity) te).getAvailableEnergy();
+            }
+        }
+
+        for (RFPowerUnitTileEntity powerUnit : getPowerUnits()) {
+            available += powerUnit.getAvailableSGEnergy();
+        }
+
+        return available >= amount;
+    }
+
+    public boolean useEnergy(double amount) {
+        if (amount <= energyInBuffer) {
+            energyInBuffer -= amount;
+            markDirty();
+            return true;
+        }
+
+        double energyAvailable = energyInBuffer;
+        StargateControllerTileEntity controller = null;
+
+        if (controllerPos != null && world != null) {
+            TileEntity te = world.getTileEntity(controllerPos);
+            if (te instanceof StargateControllerTileEntity) {
+                controller = (StargateControllerTileEntity) te;
+                energyAvailable += controller.getAvailableEnergy();
+            }
+        }
+
+        List<RFPowerUnitTileEntity> powerUnits = getPowerUnits();
+        for (RFPowerUnitTileEntity powerUnit : powerUnits) {
+            energyAvailable += powerUnit.getAvailableSGEnergy();
+        }
+
+        if (amount > energyAvailable) {
+            return false;
+        }
+
+        double energyRequired = amount - energyInBuffer;
+
+        for (RFPowerUnitTileEntity powerUnit : powerUnits) {
+            if (energyRequired <= 0) {
+                break;
+            }
+            double drawn = powerUnit.extractSGEnergy(energyRequired);
+            energyInBuffer += drawn;
+            energyRequired -= drawn;
+        }
+
+        if (controller != null && energyRequired > 0) {
+            double drawn = controller.drawEnergy(energyRequired);
+            energyInBuffer += drawn;
+        }
+
+        if (amount <= energyInBuffer) {
+            energyInBuffer -= amount;
+            markDirty();
+            return true;
+        }
+
+        return false;
     }
 
     @Override
-    public SPacketUpdateTileEntity getUpdatePacket() { return new SPacketUpdateTileEntity(pos, 1, write(new NBTTagCompound())); }
+    public SPacketUpdateTileEntity getUpdatePacket() {
+        return new SPacketUpdateTileEntity(pos, 1, write(new NBTTagCompound()));
+    }
+
     @Override
-    public void onDataPacket(NetworkManager net, SPacketUpdateTileEntity pkt) { read(pkt.getNbtCompound()); }
+    public void onDataPacket(NetworkManager net, SPacketUpdateTileEntity pkt) {
+        StargateVortexState oldState = this.vortexState;
+        read(pkt.getNbtCompound());
+
+        if (isMerged && this.vortexState != oldState) {
+            if (this.vortexState == StargateVortexState.OPENING) {
+                initiateOpeningTransient();
+            } else if (this.vortexState == StargateVortexState.CLOSING) {
+                initiateClosingTransient();
+            }
+        }
+    }
+
     @Override
-    public NBTTagCompound getUpdateTag() { return write(new NBTTagCompound()); }
+    public NBTTagCompound getUpdateTag() {
+        return write(new NBTTagCompound());
+    }
 
     public void sync() {
         markDirty();
@@ -166,6 +311,11 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
 
             if (irisPhase < targetPhase) irisPhase++;
             if (irisPhase > targetPhase) irisPhase--;
+
+            if (vortexState == StargateVortexState.ACTIVE || vortexState == StargateVortexState.OPENING || vortexState == StargateVortexState.CLOSING) {
+                applyRandomImpulse();
+                updateEventHorizon();
+            }
             return;
         }
 
@@ -194,12 +344,25 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
                         this.sync();
                     }
 
-                    if (this.timeout < TRANSIENT_DURATION) {
-                        if (this.irisState == StargateIrisState.OPEN || this.irisState == StargateIrisState.OPENING) {
-                            handleKawooshVaporization();
-                        }
+                    // Quand tous les chevrons sont verrouillés, on passe en état de Kawoosh
+                    if (this.timeout == TRANSIENT_DURATION) {
+                        vortexState = StargateVortexState.OPENING;
+                        sync();
                     }
                 } else {
+                    disconnect(); // Sécurité si timeout atteint sans basculer
+                }
+                break;
+
+            case OPENING:
+                if (this.timeout > 0) {
+                    this.timeout--;
+                    // Logique de désintégration du Kawoosh
+                    if (this.irisState == StargateIrisState.OPEN || this.irisState == StargateIrisState.OPENING) {
+                        handleKawooshVaporization();
+                    }
+                } else {
+                    // Le Kawoosh est terminé, on passe en connexion stable
                     numEngagedChevrons = dialledAddress != null ? dialledAddress.length() : 0;
                     vortexState = StargateVortexState.ACTIVE;
                     int openTime = SGCraftRebornConfig.SECONDS_TO_STAY_OPEN.get();
@@ -208,23 +371,36 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
                     sync();
                 }
                 break;
+
             case ACTIVE:
                 if (timeout > 0) {
+                    if (isInitiator) {
+                        if (!useEnergy(getEnergyUsePerTick() * distanceFactor)) {
+                            disconnect();
+                            break;
+                        }
+                    }
+
                     timeout--;
-                    if (irisState == StargateIrisState.OPEN) handleEntityTeleportation();
-                    else if (irisState == StargateIrisState.CLOSED) handleEntityVaporization();
+                    if (irisState == StargateIrisState.OPEN) {
+                        handleEntityTeleportation();
+                    } else if (irisState == StargateIrisState.CLOSED) {
+                        handleEntityVaporization();
+                    }
                 } else disconnect();
                 break;
+
             case CLOSING:
                 vortexState = StargateVortexState.IDLE;
                 updateControllerBlockState();
                 sync();
                 break;
+
             default: break;
         }
     }
 
-    public void startDialing(String targetAddress, ExtendedPos targetLocation, boolean isInitiator) {
+    public void startDialing(String targetAddress, ExtendedPos targetLocation, boolean isInitiator, double distFactor) {
         if (targetAddress == null || targetAddress.isEmpty() || getAddress().startsWith(targetAddress)) {
             disconnect();
             return;
@@ -253,6 +429,7 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
         dialledAddress = targetAddress;
         connectedLoc = targetLocation;
         this.isInitiator = isInitiator;
+        this.distanceFactor = distFactor;
         numEngagedChevrons = 0;
         timeout = requiredChevrons * (DIALLING_TIME + INTER_DIALLING_TIME) + TRANSIENT_DURATION;
 
@@ -262,7 +439,7 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
         if (isInitiator && remoteGate != null) {
             String senderAddress = getAddress();
             if (senderAddress.length() > requiredChevrons) senderAddress = senderAddress.substring(0, requiredChevrons);
-            remoteGate.startDialing(senderAddress, getExtendedPos(), false);
+            remoteGate.startDialing(senderAddress, getExtendedPos(), false, distFactor);
         }
     }
 
@@ -479,48 +656,63 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
     public boolean isMerged() {
         return isMerged;
     }
+
     public boolean isInitiator() {
         return isInitiator;
     }
+
     public ExtendedPos getConnectedLoc() {
         return connectedLoc;
     }
+
     public String getDialledAddress() {
         return dialledAddress;
     }
+
     public double getEnergyInBuffer() {
         return energyInBuffer;
     }
+
     public int getNumEngagedChevrons() {
         return numEngagedChevrons;
     }
+
     public boolean hasChevronUpgrade() {
         return hasChevronUpgrade;
     }
+
     public boolean hasIrisUpgrade() {
         return hasIrisUpgrade;
     }
+
     public StargateIrisState getIrisState() {
         return irisState;
     }
+
     public int getIrisPhase() {
         return irisPhase;
     }
+
     public int getLastIrisPhase() {
         return lastIrisPhase;
     }
+
     public StargateVortexState getVortexState() {
         return vortexState;
     }
+
     public double getRingAngle() {
         return ringAngle;
     }
+
     public double getLastRingAngle() {
         return lastRingAngle;
     }
+
     public ExtendedPos getExtendedPos() {
         return new ExtendedPos(getPos(), getWorld().getDimension().getType().getId());
     }
+
     public BlockPos getControllerPos() {
         return controllerPos;
     }
@@ -615,15 +807,47 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
 
     @Override
     public AxisAlignedBB getRenderBoundingBox() {
-        return new AxisAlignedBB(pos).grow(3.0, 5.0, 3.0);
+        return new AxisAlignedBB(pos).grow(3.0, 5.0, 8.0);
     }
 
     private void handleKawooshVaporization() {
         AxisAlignedBB box = getKawooshBoundingBox();
         List<Entity> entities = world.getEntitiesWithinAABB(Entity.class, box);
 
+        EnumFacing facing = world.getBlockState(pos).get(StargateBaseBlock.FACING);
+
+        double gateX = pos.getX() + 0.5;
+        double gateY = pos.getY() + 2.5;
+        double gateZ = pos.getZ() + 0.5;
+
+        double maxDepth = 6.0;
+        double maxRadius = 2.0;
+
         for (Entity entity : entities) {
-            entity.attackEntityFrom(DamageSource.MAGIC, Float.MAX_VALUE);
+            double eX = entity.posX;
+            double eY = entity.posY + (entity.height / 2.0);
+            double eZ = entity.posZ;
+
+            double distanceAlongAxis = 0.0;
+            double distanceFromAxis = 0.0;
+
+            if (facing.getAxis() == EnumFacing.Axis.Z) {
+                distanceAlongAxis = Math.abs(eZ - gateZ);
+                distanceFromAxis = Math.sqrt(Math.pow(eX - gateX, 2) + Math.pow(eY - gateY, 2));
+            } else if (facing.getAxis() == EnumFacing.Axis.X) {
+                distanceAlongAxis = Math.abs(eX - gateX);
+                distanceFromAxis = Math.sqrt(Math.pow(eZ - gateZ, 2) + Math.pow(eY - gateY, 2));
+            } else {
+                distanceAlongAxis = Math.abs(eY - gateY);
+                distanceFromAxis = Math.sqrt(Math.pow(eX - gateX, 2) + Math.pow(eZ - gateZ, 2));
+            }
+            double currentRadius = maxRadius * (1.0 - (distanceAlongAxis / maxDepth));
+
+            double trueDistance = distanceFromAxis - (entity.width / 2.0);
+
+            if (distanceAlongAxis <= maxDepth && trueDistance <= currentRadius) {
+                entity.attackEntityFrom(DamageSource.MAGIC, Float.MAX_VALUE);
+            }
         }
     }
 
@@ -650,5 +874,135 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
 
         AxisAlignedBB box = new AxisAlignedBB(minX, minY, minZ, maxX, maxY, maxZ);
         return box.expand(facing.getXOffset() * depth, facing.getYOffset() * depth, facing.getZOffset() * depth);
+    }
+
+    public double[][][] getEventHorizonGrid() {
+        if (ehGrid == null) {
+            ehGrid = new double[2][ehGridPolarSize + 2][ehGridRadialSize + 1];
+            for (int i = 0; i < 2; i++) {
+                ehGrid[i][0] = ehGrid[i][ehGridPolarSize];
+                ehGrid[i][ehGridPolarSize + 1] = ehGrid[i][1];
+            }
+        }
+        return ehGrid;
+    }
+
+    public void initiateOpeningTransient() {
+        double[][] v = getEventHorizonGrid()[1];
+        for (int j = 0; j <= ehGridPolarSize + 1; j++) {
+            v[j][0] = 4.0;
+            v[j][1] = v[j][0] + 0.25 * random.nextGaussian();
+        }
+    }
+
+    public void initiateClosingTransient() {
+        double[][] v = getEventHorizonGrid()[1];
+        for (int i = 1; i < ehGridRadialSize; i++) {
+            for (int j = 1; j <= ehGridPolarSize; j++) {
+                v[j][i] += 0.25 * random.nextGaussian();
+            }
+        }
+    }
+
+    public void applyRandomImpulse() {
+        double[][] v = getEventHorizonGrid()[1];
+        int i = random.nextInt(ehGridRadialSize - 1) + 1;
+        int j = random.nextInt(ehGridPolarSize) + 1;
+        v[j][i] += 0.05 * random.nextGaussian();
+    }
+
+    public void updateEventHorizon() {
+        double[][][] grid = getEventHorizonGrid();
+        double[][] u = grid[0];
+        double[][] v = grid[1];
+        double dt = 1.0;
+        double asq = 0.03;
+        double d = 0.95;
+
+        for (int i = 1; i < ehGridRadialSize; i++) {
+            for (int j = 1; j <= ehGridPolarSize; j++) {
+                double du_dr = 0.5 * (u[j][i + 1] - u[j][i - 1]);
+                double d2u_drsq = u[j][i + 1] - 2 * u[j][i] + u[j][i - 1];
+                double d2u_dthsq = u[j + 1][i] - 2 * u[j][i] + u[j - 1][i];
+                v[j][i] = d * v[j][i] + (asq * dt) * (d2u_drsq + du_dr / i + d2u_dthsq / (i * i));
+            }
+        }
+        for (int i = 1; i < ehGridRadialSize; i++) {
+            for (int j = 1; j <= ehGridPolarSize; j++) {
+                u[j][i] += v[j][i] * dt;
+            }
+        }
+
+        double u0 = 0, v0 = 0;
+        for (int j = 1; j <= ehGridPolarSize; j++) {
+            u0 += u[j][1];
+            v0 += v[j][1];
+        }
+        u0 /= ehGridPolarSize;
+        v0 /= ehGridPolarSize;
+
+        for (int j = 1; j <= ehGridPolarSize; j++) {
+            u[j][0] = u0;
+            v[j][0] = v0;
+        }
+    }
+
+    public int getCamouflageLevel() {
+        int level = 0;
+        for (int i : new int[]{0, 4}) {
+            ItemStack stack = inventory.getStackInSlot(i);
+            if (!stack.isEmpty()) {
+                Block block = Block.getBlockFromItem(stack.getItem());
+                if (block instanceof BlockSlab) level = Math.max(level, 1);
+                else if (block.getDefaultState().isFullCube()) level = Math.max(level, 2);
+            }
+        }
+        return level;
+    }
+
+    public float getChevronAngle() {
+        int type = hasChevronUpgrade() ? 1 : 0;
+        return CHEVRON_ANGLES[type][getCamouflageLevel()];
+    }
+
+    private List<RFPowerUnitTileEntity> getPowerUnits() {
+        List<RFPowerUnitTileEntity> units = new ArrayList<>();
+
+        for (EnumFacing facing : EnumFacing.values()) {
+            TileEntity te = world.getTileEntity(pos.offset(facing));
+            if (te instanceof RFPowerUnitTileEntity && !units.contains(te)) {
+                units.add((RFPowerUnitTileEntity) te);
+            }
+        }
+
+        if (world.getBlockState(pos).getBlock() instanceof StargateBaseBlock) {
+            EnumFacing facing = world.getBlockState(pos).get(StargateBaseBlock.FACING);
+            EnumFacing right = facing.rotateY();
+
+            for (int i = -2; i <= 2; i++) {
+                BlockPos underPos = pos.offset(right, i).down();
+                TileEntity te = world.getTileEntity(underPos);
+                if (te instanceof RFPowerUnitTileEntity && !units.contains(te)) {
+                    units.add((RFPowerUnitTileEntity) te);
+                }
+            }
+        }
+
+        if (controllerPos != null) {
+            for (EnumFacing facing : EnumFacing.values()) {
+                TileEntity te = world.getTileEntity(controllerPos.offset(facing));
+                if (te instanceof RFPowerUnitTileEntity && !units.contains(te)) {
+                    units.add((RFPowerUnitTileEntity) te);
+                }
+            }
+        }
+
+        return units;
+    }
+
+    public void addComputerAdapter(StargateAbstractAPI adapter) {
+        if (!computerAdapters.contains(adapter)) {
+            computerAdapters.add(adapter);
+        }
     }
 }

@@ -1,7 +1,7 @@
 package fr.azures04.sgcraftreborn.client.screens;
 
 import fr.azures04.sgcraftreborn.common.Constants;
-import fr.azures04.sgcraftreborn.common.inventories.StargateBaseCamouflageContainer;
+import fr.azures04.sgcraftreborn.common.containers.StargateBaseCamouflageContainer;
 import fr.azures04.sgcraftreborn.common.world.StargateAddressing;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.inventory.GuiContainer;

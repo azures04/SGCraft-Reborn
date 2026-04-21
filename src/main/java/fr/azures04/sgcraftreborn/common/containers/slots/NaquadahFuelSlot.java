@@ -1,4 +1,4 @@
-package fr.azures04.sgcraftreborn.common.inventories.slots;
+package fr.azures04.sgcraftreborn.common.containers.slots;
 
 import fr.azures04.sgcraftreborn.common.registries.ModItems;
 import net.minecraft.item.ItemStack;

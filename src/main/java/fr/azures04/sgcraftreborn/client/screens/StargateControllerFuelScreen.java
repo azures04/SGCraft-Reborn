@@ -1,7 +1,7 @@
 package fr.azures04.sgcraftreborn.client.screens;
 
 import fr.azures04.sgcraftreborn.common.Constants;
-import fr.azures04.sgcraftreborn.common.inventories.StargateControllerFuelContainer;
+import fr.azures04.sgcraftreborn.common.containers.StargateControllerFuelContainer;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.util.ResourceLocation;
@@ -56,25 +56,31 @@ public class StargateControllerFuelScreen extends GuiContainer {
 
         this.drawTexturedModalRect(relX, relY, 0, 0, this.xSize, this.ySize);
 
-        //drawFuelGauge(relX, relY);
+        drawFuelGauge(relX, relY);
     }
 
-    /*private void drawFuelGauge(int relX, int relY) {
-        double energyLevel = this.container..getEnergyScaled();
+    private void drawFuelGauge(int relX, int relY) {
+        // On récupère le ratio (0.0 à 1.0) calculé par le container
+        double energyLevel = this.container.getEnergyScaled();
+
+        // On calcule la hauteur en pixels (max 34)
         int levelHeight = (int)(FUEL_GAUGE_HEIGHT * energyLevel);
 
         if (levelHeight > 0) {
             GlStateManager.enableBlend();
+
+            // On dessine la partie colorée de la jauge.
+            // La texture de la jauge commence à V=208
             this.drawTexturedModalRect(
                     relX + FUEL_LEFT_X,
-                    relY + FUEL_LEFT_Y + FUEL_GAUGE_HEIGHT - levelHeight,
+                    relY + FUEL_LEFT_Y + FUEL_GAUGE_HEIGHT - levelHeight, // Positionne le bas
                     FUEL_LEFT_U,
-                    FUEL_FUEL_V + FUEL_GAUGE_HEIGHT - levelHeight,
+                    FUEL_FUEL_V + FUEL_GAUGE_HEIGHT - levelHeight, // Découpe le bas de la texture
                     FUEL_GAUGE_WIDTH,
                     levelHeight
             );
 
             GlStateManager.disableBlend();
         }
-    }*/
+    }
 }

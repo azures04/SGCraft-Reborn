@@ -1,6 +1,6 @@
-package fr.azures04.sgcraftreborn.common.inventories;
+package fr.azures04.sgcraftreborn.common.containers;
 
-import fr.azures04.sgcraftreborn.common.inventories.slots.CamouflageSlot;
+import fr.azures04.sgcraftreborn.common.containers.slots.CamouflageSlot;
 import fr.azures04.sgcraftreborn.common.registries.tiles.StargateBaseTileEntity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;

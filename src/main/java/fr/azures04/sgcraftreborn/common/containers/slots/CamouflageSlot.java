@@ -1,7 +1,5 @@
-package fr.azures04.sgcraftreborn.common.inventories.slots;
+package fr.azures04.sgcraftreborn.common.containers.slots;
 
-import net.minecraft.inventory.IInventory;
-import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.items.IItemHandler;

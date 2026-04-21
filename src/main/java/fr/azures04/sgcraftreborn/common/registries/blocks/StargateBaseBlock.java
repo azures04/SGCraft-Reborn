@@ -121,6 +121,10 @@ public class StargateBaseBlock extends Block {
                         InventoryHelper.spawnItemStack(worldIn, pos.getX(), pos.getY(), pos.getZ(), new ItemStack(ModItems.STARGATE_IRIS_UPGRADE));
                         base.setHasIrisUpgrade(false);
                     }
+                    for (int i = 0; i < base.getInventory().getSlots(); i++) {
+                        ItemStack slotItem = base.getInventory().getStackInSlot(i);
+                        InventoryHelper.spawnItemStack(worldIn, pos.getX(), pos.getY(), pos.getZ(), slotItem);
+                    }
                 }
             }
             super.onReplaced(state, worldIn, pos, newState, isMoving);
@@ -154,7 +158,6 @@ public class StargateBaseBlock extends Block {
                 if (hand == EnumHand.MAIN_HAND) {
                     if (base.isMerged()) {
                         NetworkHooks.openGui((EntityPlayerMP) player, (IInteractionObject) base, pos);
-                    } else {
                         player.sendMessage(new TextComponentString("LOCAL ADDRESS : " + base.getAddress()));
                         player.sendMessage(new TextComponentString("REMOTE ADDRESS : " + base.getDialledAddress()));
                         player.sendMessage(new TextComponentString("IS INITIATOR : " + base.isInitiator()));

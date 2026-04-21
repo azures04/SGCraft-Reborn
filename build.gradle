@@ -49,8 +49,16 @@ minecraft {
     }
 }
 
+repositories {
+    maven {
+        name = "CurseMaven"
+        url =  "https://cursemaven.com"
+    }
+}
+
 dependencies {
     minecraft "net.minecraftforge:forge:1.13.2-25.0.223"
+    implementation fg.deobf("curse.maven:cctweaked-282001:2719219")
 }
 
 jar {

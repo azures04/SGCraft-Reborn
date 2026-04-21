@@ -1,18 +1,24 @@
 package fr.azures04.sgcraftreborn.client.models.tiles;
 
-import fr.azures04.sgcraftreborn.SGCraftReborn;
 import fr.azures04.sgcraftreborn.common.Constants;
 import fr.azures04.sgcraftreborn.common.registries.blocks.StargateBaseBlock;
 import fr.azures04.sgcraftreborn.common.registries.tiles.StargateBaseTileEntity;
 import fr.azures04.sgcraftreborn.common.registries.tiles.states.StargateIrisState;
 import fr.azures04.sgcraftreborn.common.registries.tiles.states.StargateVortexState;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.block.Block;
+import net.minecraft.block.state.IBlockState;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.*;
+import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.init.Blocks;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.items.CapabilityItemHandler;
+
+import java.util.Objects;
 
 public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateBaseTileEntity> {
 
@@ -50,13 +56,13 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
 
     final static double numIrisBlades = 12;
 
-    static int chevronEngagementSequences[][] = {
+    static int[][] chevronEngagementSequences = {
             {9, 3, 4, 5, 6, 0, 1, 2, 9},
             {7, 3, 4, 5, 8, 0, 1, 2, 6}
     };
 
-    static double s[] = new double[numRingSegments + 1];
-    static double c[] = new double[numRingSegments + 1];
+    static double[] s = new double[numRingSegments + 1];
+    static double[] c = new double[numRingSegments + 1];
 
     static {
         for (int i = 0; i <= numRingSegments; i++) {
@@ -69,13 +75,16 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
     private double u0, v0;
     private float nX, nY, nZ;
 
-    private enum RingType { Inner, Outer }
+    private enum RingType {
+        Inner,
+        Outer
+    }
 
     @Override
     public void render(StargateBaseTileEntity tileEntityIn, double x, double y, double z, float partialTicks, int destroyStage) {
         if (!tileEntityIn.isMerged()) return;
 
-        EnumFacing facing = tileEntityIn.getWorld().getBlockState(tileEntityIn.getPos()).get(StargateBaseBlock.FACING);
+        EnumFacing facing = Objects.requireNonNull(tileEntityIn.getWorld()).getBlockState(tileEntityIn.getPos()).get(StargateBaseBlock.FACING);
 
         GlStateManager.pushMatrix();
         GlStateManager.translated(x + 0.5, y + 0.5, z + 0.5);
@@ -104,13 +113,39 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
         if (tileEntityIn.hasIrisUpgrade()) {
             renderIris(tileEntityIn, buffer, tessellator, partialTicks);
         }
-
         if (tileEntityIn.getVortexState() == StargateVortexState.ACTIVE) {
             renderEventHorizon(tileEntityIn, buffer, tessellator);
         }
 
+        renderCamouflage(tileEntityIn);
+
         GlStateManager.disableRescaleNormal();
         GlStateManager.popMatrix();
+    }
+
+    private void renderCamouflage(StargateBaseTileEntity tileEntityIn) {
+        tileEntityIn.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY).ifPresent(inventory -> {
+            BlockRendererDispatcher dispatcher = Minecraft.getInstance().getBlockRendererDispatcher();
+
+            this.bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
+
+            for (int i = 0; i < 5; i++) {
+                ItemStack stack = inventory.getStackInSlot(i);
+                if (stack.isEmpty()) {
+                    continue;
+                }
+
+                Block block = Block.getBlockFromItem(stack.getItem());
+                if (block == Blocks.AIR) {
+                    continue;
+                }
+                IBlockState state = block.getDefaultState();
+                GlStateManager.pushMatrix();
+                GlStateManager.translatef(i - 2.5f, -2.5f, 0.5f);
+                dispatcher.renderBlockBrightness(state, 1.0f);
+                GlStateManager.popMatrix();
+            }
+        });
     }
 
     private void renderInnerRing(StargateBaseTileEntity te, BufferBuilder buffer, Tessellator tessellator, float partialTicks) {
@@ -130,7 +165,7 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
         buffer.begin(7, DefaultVertexFormats.POSITION_TEX_NORMAL);
 
         for (int i = 0; i < numRingSegments; i++) {
-            selectTile(type == RingType.Outer ? 0x00 : 0x00);
+            selectTile(0x00);
 
             if (type == RingType.Outer) {
                 setNormal((float) c[i], (float) s[i], 0);
@@ -166,14 +201,15 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
         int numChevrons = te.hasChevronUpgrade() ? 9 : 7;
         int i0 = numChevrons > 7 ? 0 : 1;
         int k = te.getDialledAddress().length() > 7 ? 1 : 0;
-        float a = 360.0f / 9.0f;
+
+        float angle = te.getChevronAngle();
 
         for (int i = i0; i < i0 + numChevrons; i++) {
             int j = chevronEngagementSequences[k][i];
             boolean engaged = te.getNumEngagedChevrons() > j;
 
             GlStateManager.pushMatrix();
-            GlStateManager.rotatef(90 - (i - 4) * a, 0, 0, 1);
+            GlStateManager.rotatef(90 - (i - 4) * angle, 0, 0, 1);
             renderChevron(buffer, tessellator, engaged);
             GlStateManager.popMatrix();
         }
@@ -183,22 +219,23 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
         double r1 = chevronInnerRadius, r2 = chevronOuterRadius;
         double z2 = ringDepth / 2, z1 = z2 + chevronDepth;
         double w1 = chevronBorderWidth, w2 = w1 * 1.25;
-        double x1 = r1, y1 = chevronWidth / 4, x2 = r2, y2 = chevronWidth / 2;
+        double y1 = chevronWidth / 4;
+        double y2 = chevronWidth / 2;
 
         if (engaged) GlStateManager.translated(-chevronMotionDistance, 0, 0);
 
         buffer.begin(7, DefaultVertexFormats.POSITION_TEX_NORMAL);
         selectTile(chevronTextureIndex);
         setNormal(0, 0, 1);
-        vertex(buffer, x2, y2, z1, 0, 2); vertex(buffer, x1, y1, z1, 0, 16); vertex(buffer, x1 + w1, y1 - w1, z1, 4, 12); vertex(buffer, x2, y2 - w2, z1, 4, 2);
-        vertex(buffer, x2, y2, z1, 0, 0); vertex(buffer, x2, y2, z2, 0, 4); vertex(buffer, x1, y1, z2, 16, 4); vertex(buffer, x1, y1, z1, 16, 0);
-        vertex(buffer, x2, y2, z1, 16, 0); vertex(buffer, x2, y2 - w2, z1, 12, 0); vertex(buffer, x2, y2 - w2, z2, 12, 4); vertex(buffer, x2, y2, z2, 16, 4);
-        vertex(buffer, x1 + w1, y1 - w1, z1, 4, 12); vertex(buffer, x1, y1, z1, 0, 16); vertex(buffer, x1, -y1, z1, 16, 16); vertex(buffer, x1 + w1, -y1 + w1, z1, 12, 12);
-        vertex(buffer, x1, y1, z1, 0, 0); vertex(buffer, x1, y1, z2, 0, 4); vertex(buffer, x1, -y1, z2, 16, 4); vertex(buffer, x1, -y1, z1, 16, 0);
-        vertex(buffer, x2, -y2 + w2, z1, 12, 0); vertex(buffer, x1 + w1, -y1 + w1, z1, 12, 12); vertex(buffer, x1, -y1, z1, 16, 16); vertex(buffer, x2, -y2, z1, 16, 0);
-        vertex(buffer, x1, -y1, z1, 0, 0); vertex(buffer, x1, -y1, z2, 0, 4); vertex(buffer, x2, -y2, z2, 16, 4); vertex(buffer, x2, -y2, z1, 16, 0);
-        vertex(buffer, x2, -y2, z1, 0, 0); vertex(buffer, x2, -y2, z2, 0, 4); vertex(buffer, x2, -y2 + w2, z2, 4, 4); vertex(buffer, x2, -y2 + w2, z1, 4, 0);
-        vertex(buffer, x2, -y2, z2, 0, 0); vertex(buffer, x1, -y1, z2, 0, 16); vertex(buffer, x1, y1, z2, 16, 16); vertex(buffer, x2, y2, z2, 16, 0);
+        vertex(buffer, r2, y2, z1, 0, 2); vertex(buffer, r1, y1, z1, 0, 16); vertex(buffer, r1 + w1, y1 - w1, z1, 4, 12); vertex(buffer, r2, y2 - w2, z1, 4, 2);
+        vertex(buffer, r2, y2, z1, 0, 0); vertex(buffer, r2, y2, z2, 0, 4); vertex(buffer, r1, y1, z2, 16, 4); vertex(buffer, r1, y1, z1, 16, 0);
+        vertex(buffer, r2, y2, z1, 16, 0); vertex(buffer, r2, y2 - w2, z1, 12, 0); vertex(buffer, r2, y2 - w2, z2, 12, 4); vertex(buffer, r2, y2, z2, 16, 4);
+        vertex(buffer, r1 + w1, y1 - w1, z1, 4, 12); vertex(buffer, r1, y1, z1, 0, 16); vertex(buffer, r1, -y1, z1, 16, 16); vertex(buffer, r1 + w1, -y1 + w1, z1, 12, 12);
+        vertex(buffer, r1, y1, z1, 0, 0); vertex(buffer, r1, y1, z2, 0, 4); vertex(buffer, r1, -y1, z2, 16, 4); vertex(buffer, r1, -y1, z1, 16, 0);
+        vertex(buffer, r2, -y2 + w2, z1, 12, 0); vertex(buffer, r1 + w1, -y1 + w1, z1, 12, 12); vertex(buffer, r1, -y1, z1, 16, 16); vertex(buffer, r2, -y2, z1, 16, 0);
+        vertex(buffer, r1, -y1, z1, 0, 0); vertex(buffer, r1, -y1, z2, 0, 4); vertex(buffer, r2, -y2, z2, 16, 4); vertex(buffer, r2, -y2, z1, 16, 0);
+        vertex(buffer, r2, -y2, z1, 0, 0); vertex(buffer, r2, -y2, z2, 0, 4); vertex(buffer, r2, -y2 + w2, z2, 4, 4); vertex(buffer, r2, -y2 + w2, z1, 4, 0);
+        vertex(buffer, r2, -y2, z2, 0, 0); vertex(buffer, r1, -y1, z2, 0, 16); vertex(buffer, r1, y1, z2, 16, 16); vertex(buffer, r2, y2, z2, 16, 0);
         tessellator.draw();
 
         selectTile(chevronLitTextureIndex);
@@ -207,9 +244,9 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
 
         buffer.begin(7, DefaultVertexFormats.POSITION_TEX_NORMAL);
         setNormal(0, 0, 1);
-        vertex(buffer, x2, y2 - w2, z1, 0, 4); vertex(buffer, x1 + w1, y1 - w1, z1, 4, 16); vertex(buffer, x1 + w1, 0, z1, 8, 16); vertex(buffer, x2, 0, z1, 8, 4);
-        vertex(buffer, x2, 0, z1, 8, 4); vertex(buffer, x1 + w1, 0, z1, 8, 16); vertex(buffer, x1 + w1, -y1 + w1, z1, 12, 16); vertex(buffer, x2, -y2 + w2, z1, 16, 4);
-        vertex(buffer, x2, y2 - w2, z2, 0, 0); vertex(buffer, x2, y2 - w2, z1, 0, 4); vertex(buffer, x2, -y2 + w2, z1, 16, 4); vertex(buffer, x2, -y2 + w2, z2, 16, 0);
+        vertex(buffer, r2, y2 - w2, z1, 0, 4); vertex(buffer, r1 + w1, y1 - w1, z1, 4, 16); vertex(buffer, r1 + w1, 0, z1, 8, 16); vertex(buffer, r2, 0, z1, 8, 4);
+        vertex(buffer, r2, 0, z1, 8, 4); vertex(buffer, r1 + w1, 0, z1, 8, 16); vertex(buffer, r1 + w1, -y1 + w1, z1, 12, 16); vertex(buffer, r2, -y2 + w2, z1, 16, 4);
+        vertex(buffer, r2, y2 - w2, z2, 0, 0); vertex(buffer, r2, y2 - w2, z1, 0, 4); vertex(buffer, r2, -y2 + w2, z1, 16, 4); vertex(buffer, r2, -y2 + w2, z2, 16, 0);
         tessellator.draw();
 
         GlStateManager.color4f(1f, 1f, 1f, 1f);
@@ -223,21 +260,26 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
         GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
 
         double rclip = 2.5;
-        double t = (System.currentTimeMillis() % 100000) / 100.0;
+        if (te.getIrisState() == StargateIrisState.CLOSED || te.getIrisState() == StargateIrisState.CLOSING) {
+            double phase = te.getLastIrisPhase() + (te.getIrisPhase() - te.getLastIrisPhase()) * Minecraft.getInstance().getRenderPartialTicks();
+            rclip = 2.5 * (phase / 60.0);
+        }
+
+        double[][] grid = te.getEventHorizonGrid()[0];
 
         for (int i = 1; i < ehGridRadialSize; i++) {
             buffer.begin(8, DefaultVertexFormats.POSITION_TEX_NORMAL);
             for (int j = 0; j <= ehGridPolarSize; j++) {
-                ehVertex(buffer, i, j, rclip, t);
-                ehVertex(buffer, i + 1, j, rclip, t);
+                ehVertex(buffer, grid, i, j, rclip);
+                ehVertex(buffer, grid, i + 1, j, rclip);
             }
             tessellator.draw();
         }
 
         buffer.begin(6, DefaultVertexFormats.POSITION_TEX_NORMAL);
-        buffer.pos(0, 0, Math.sin(-t) * 0.1).tex(0, 0).normal(0, 0, 1).endVertex();
+        buffer.pos(0, 0, ehClip(grid[1][0], 0, rclip)).tex(0, 0).normal(0, 0, 1).endVertex();
         for (int j = 0; j <= ehGridPolarSize; j++) {
-            ehVertex(buffer, 1, j, rclip, t);
+            ehVertex(buffer, grid, 1, j, rclip);
         }
         tessellator.draw();
 
@@ -290,18 +332,37 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
         GlStateManager.popMatrix();
     }
 
-    private void ehVertex(BufferBuilder buffer, int i, int j, double rclip, double time) {
+    private void ehVertex(BufferBuilder buffer, double[][] grid, int i, int j, double rclip) {
         double r = i * ehBandWidth;
-        double x = r * c[j];
-        double y = r * s[j];
-        double z = r >= rclip ? 0 : Math.sin(r * 5.0 - time) * 0.1 * (1.0 - r / rclip);
 
-        vertexUV(buffer, x, y, z, x, y);
+        double z = ehClip(grid[j + 1][i], r, rclip);
+
+        double maxVisualDepth = 5.0;
+        double scale = 1.0;
+
+        if (z > 0) {
+            scale = Math.max(0.0, 1.0 - (z / maxVisualDepth));
+        }
+
+        double x = r * c[j] * scale;
+        double y = r * s[j] * scale;
+
+        double u = r * c[j];
+        double v = r * s[j];
+
+        vertexUV(buffer, x, y, z, u, v);
+    }
+
+    private double ehClip(double z, double r, double rclip) {
+        if (r >= rclip) {
+            z = Math.min(z, 0);
+        }
+        return z;
     }
 
     private void selectTile(int index) {
         u0 = (index % textureTilesWide) * (textureScaleU * 16);
-        v0 = (index / textureTilesWide) * (textureScaleV * 16);
+        v0 = ((double) index / textureTilesWide) * (textureScaleV * 16);
     }
 
     private void setNormal(float x, float y, float z) {

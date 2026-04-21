@@ -1,22 +1,25 @@
-package fr.azures04.sgcraftreborn.common.inventories;
+package fr.azures04.sgcraftreborn.common.containers;
 
-import fr.azures04.sgcraftreborn.SGCraftReborn;
-import fr.azures04.sgcraftreborn.common.inventories.slots.NaquadahFuelSlot;
+import fr.azures04.sgcraftreborn.common.config.SGCraftRebornConfig;
+import fr.azures04.sgcraftreborn.common.containers.slots.NaquadahFuelSlot;
 import fr.azures04.sgcraftreborn.common.registries.tiles.StargateControllerTileEntity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.Container;
+import net.minecraft.inventory.IContainerListener;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.TextComponentString;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
-import org.apache.logging.log4j.Level;
 
 public class StargateControllerFuelContainer extends Container {
 
     private final StargateControllerTileEntity controller;
+    private int lastEnergyScaled = -1;
+    private int clientEnergyScaled = 0;
 
     public StargateControllerFuelContainer(InventoryPlayer playerInv, BlockPos pos) {
         super();
@@ -75,6 +78,34 @@ public class StargateControllerFuelContainer extends Container {
     @Override
     public boolean canInteractWith(EntityPlayer playerIn) {
         return playerIn.getDistanceSq(controller.getPos()) <= 8.0D;
+    }
+
+    public double getEnergyScaled() {
+        return clientEnergyScaled / 10000.0;
+    }
+
+    @Override
+    public void detectAndSendChanges() {
+        super.detectAndSendChanges();
+
+        double fuel = controller.getFuelLevel();
+        double max = SGCraftRebornConfig.ENERGY_PER_FUEL_ITEM.get();
+        int currentEnergyScaled = max > 0 ? (int) ((fuel / max) * 10000) : 0;
+
+        for (IContainerListener listener : this.listeners) {
+            if (this.lastEnergyScaled != currentEnergyScaled) {
+                listener.sendWindowProperty(this, 0, currentEnergyScaled);
+            }
+        }
+        this.lastEnergyScaled = currentEnergyScaled;
+    }
+
+    @Override
+    @OnlyIn(Dist.CLIENT)
+    public void updateProgressBar(int id, int data) {
+        if (id == 0) {
+            this.clientEnergyScaled = data;
+        }
     }
 
 }

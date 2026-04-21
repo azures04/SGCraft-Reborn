@@ -46,8 +46,7 @@ public class StargateControllerScreen extends GuiScreen {
         this.status = status;
         if (status != StargateControllerStatus.LINKED) {
             addressLength = 0;
-        }
-        if (hasChevronUpgrade) {
+        } else if (hasChevronUpgrade) {
             addressLength = 9;
         }
     }

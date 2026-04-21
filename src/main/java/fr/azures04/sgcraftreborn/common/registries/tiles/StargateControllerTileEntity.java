@@ -1,9 +1,9 @@
 package fr.azures04.sgcraftreborn.common.registries.tiles;
 
-import fr.azures04.sgcraftreborn.SGCraftReborn;
 import fr.azures04.sgcraftreborn.common.Constants;
 import fr.azures04.sgcraftreborn.common.config.SGCraftRebornConfig;
-import fr.azures04.sgcraftreborn.common.inventories.StargateControllerFuelContainer;
+import fr.azures04.sgcraftreborn.common.containers.StargateControllerFuelContainer;
+import fr.azures04.sgcraftreborn.common.containers.slots.NaquadahFuelSlot;
 import fr.azures04.sgcraftreborn.common.registries.ModTilesEntities;
 import fr.azures04.sgcraftreborn.common.registries.blocks.StargateControllerBlock;
 import fr.azures04.sgcraftreborn.common.registries.blocks.states.StargateControllerStatus;
@@ -15,6 +15,7 @@ import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.Container;
+import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.play.server.SPacketUpdateTileEntity;
@@ -32,8 +33,6 @@ import net.minecraft.world.WorldServer;
 import net.minecraft.world.dimension.DimensionType;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fml.LogicalSide;
-import net.minecraftforge.fml.LogicalSidedProvider;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
@@ -141,6 +140,9 @@ public class StargateControllerTileEntity extends TileEntity implements IInterac
                 compound.getInt("connectedD")
             );
         }
+        if (compound.contains("inventory", 10)) {
+            inventory.deserializeNBT(compound.getCompound("inventory"));
+        }
     }
 
     @Override
@@ -152,6 +154,7 @@ public class StargateControllerTileEntity extends TileEntity implements IInterac
             compound.setInt("connectedZ", linkedStargate.getZ());
             compound.setInt("connectedD", linkedStargate.getDimension());
         }
+        compound.setTag("inventory", inventory.serializeNBT());
         return super.write(compound);
     }
 
@@ -211,7 +214,14 @@ public class StargateControllerTileEntity extends TileEntity implements IInterac
             throw StargateAddressing.StargateAddressingException.MISSING_CHEVRON_UPGRADE;
         }
 
-        localGate.startDialing(address, remotePos, true);
+        double distanceFactor = StargateBaseTileEntity.distanceFactorForCoordDifference(localGate, remoteGate);
+        double energyRequired = localGate.getEnergyToOpen() * distanceFactor;
+
+        if (!localGate.energyIsAvailable(energyRequired)) {
+            return "stargate.error.insufficient_power";
+        }
+
+        localGate.startDialing(address, remotePos, true, distanceFactor);
 
         return null;
     }
@@ -299,4 +309,42 @@ public class StargateControllerTileEntity extends TileEntity implements IInterac
         inventoryHolder.invalidate();
     }
 
+    public double getAvailableEnergy() {
+        double energy = fuelLevel;
+        for (int i = 0; i < inventory.getSlots(); i++) {
+            ItemStack stack = inventory.getStackInSlot(i);
+            if (NaquadahFuelSlot.isFuel(stack)) {
+                energy += stack.getCount() * SGCraftRebornConfig.ENERGY_PER_FUEL_ITEM.get();
+            }
+        }
+        return energy;
+    }
+
+    public double drawEnergy(double amount) {
+        double energyDrawn = 0;
+        while (energyDrawn < amount) {
+            if (fuelLevel <= 0) {
+                if (!useFuelItem()) {
+                    break;
+                }
+            }
+            double e = Math.min(amount - energyDrawn, fuelLevel);
+            energyDrawn += e;
+            fuelLevel -= e;
+        }
+        markDirty();
+        return energyDrawn;
+    }
+
+    private boolean useFuelItem() {
+        for (int i = inventory.getSlots() - 1; i >= 0; i--) {
+            net.minecraft.item.ItemStack stack = inventory.getStackInSlot(i);
+            if (NaquadahFuelSlot.isFuel(stack)) {
+                inventory.extractItem(i, 1, false);
+                fuelLevel += SGCraftRebornConfig.ENERGY_PER_FUEL_ITEM.get();
+                return true;
+            }
+        }
+        return false;
+    }
 }
