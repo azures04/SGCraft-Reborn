@@ -1,23 +1,27 @@
 package fr.azures04.sgcraftreborn.common.registries.blocks;
 
-import fr.azures04.sgcraftreborn.SGCraftReborn;
 import fr.azures04.sgcraftreborn.client.models.ISpecialItemRenderer;
 import fr.azures04.sgcraftreborn.client.models.tiles.items.StargateControllerISTER;
-import fr.azures04.sgcraftreborn.client.registries.ModContainers;
 import fr.azures04.sgcraftreborn.client.screens.StargateControllerScreen;
 import fr.azures04.sgcraftreborn.common.registries.blocks.states.StargateControllerStatus;
 import fr.azures04.sgcraftreborn.common.registries.tiles.StargateBaseTileEntity;
 import fr.azures04.sgcraftreborn.common.registries.tiles.StargateControllerTileEntity;
 import fr.azures04.sgcraftreborn.common.util.math.ExtendedPos;
 import net.minecraft.block.Block;
+import net.minecraft.block.IBucketPickupHandler;
+import net.minecraft.block.ILiquidContainer;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.tileentity.TileEntityItemStackRenderer;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.fluid.Fluid;
+import net.minecraft.fluid.IFluidState;
+import net.minecraft.init.Fluids;
 import net.minecraft.inventory.InventoryHelper;
 import net.minecraft.item.BlockItemUseContext;
 import net.minecraft.item.ItemStack;
+import net.minecraft.state.BooleanProperty;
 import net.minecraft.state.DirectionProperty;
 import net.minecraft.state.EnumProperty;
 import net.minecraft.state.StateContainer;
@@ -30,6 +34,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.IInteractionObject;
+import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.network.NetworkHooks;
 import net.minecraftforge.items.CapabilityItemHandler;
@@ -38,16 +43,18 @@ import org.apache.logging.log4j.Level;
 import javax.annotation.Nullable;
 import java.util.concurrent.Callable;
 
-public class StargateControllerBlock extends Block implements ISpecialItemRenderer {
+public class StargateControllerBlock extends Block implements ISpecialItemRenderer, ILiquidContainer, IBucketPickupHandler {
 
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final EnumProperty<StargateControllerStatus> STATUS = EnumProperty.create("status", StargateControllerStatus.class);
+    public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 
     public StargateControllerBlock(Properties properties) {
         super(properties);
         setDefaultState(this.stateContainer.getBaseState()
             .with(FACING, EnumFacing.NORTH)
             .with(STATUS, StargateControllerStatus.UNLINKED)
+            .with(WATERLOGGED, false)
         );
     }
 
@@ -84,15 +91,15 @@ public class StargateControllerBlock extends Block implements ISpecialItemRender
 
     @Override
     protected void fillStateContainer(StateContainer.Builder<Block, IBlockState> builder) {
-        builder.add(FACING);
-        builder.add(STATUS);
+        builder.add(FACING, STATUS, WATERLOGGED);
     }
 
     @Override
     public IBlockState getStateForPlacement(BlockItemUseContext context) {
         return (IBlockState) this.getDefaultState()
             .with(FACING, context.getPlacementHorizontalFacing())
-            .with(STATUS, StargateControllerStatus.UNLINKED);
+            .with(STATUS, StargateControllerStatus.UNLINKED)
+            .with(WATERLOGGED, false);
     }
 
     @Override
@@ -120,9 +127,6 @@ public class StargateControllerBlock extends Block implements ISpecialItemRender
                     NetworkHooks.openGui((EntityPlayerMP) player, (IInteractionObject) te, pos);
                     return true;
                 }
-            } else if (side != EnumFacing.UP) {
-                player.sendMessage(new TextComponentString(state.get(STATUS).toString()));
-                return true;
             }
         }
 
@@ -154,5 +158,47 @@ public class StargateControllerBlock extends Block implements ISpecialItemRender
             }
         }
         super.onReplaced(state, worldIn, pos, newState, isMoving);
+    }
+
+
+    @Override
+    public int getOpacity(IBlockState state, IBlockReader worldIn, BlockPos pos) {
+        return 0;
+    }
+
+    @Override
+    public boolean propagatesSkylightDown(IBlockState state, net.minecraft.world.IBlockReader reader, net.minecraft.util.math.BlockPos pos) {
+        return true;
+    }
+
+    @Override
+    public IFluidState getFluidState(IBlockState state) {
+        return state.get(WATERLOGGED) ? Fluids.WATER.getStillFluidState(false) : super.getFluidState(state);
+    }
+
+    @Override
+    public boolean canContainFluid(IBlockReader worldIn, BlockPos pos, IBlockState state, Fluid fluidIn) {
+        return true;
+    }
+
+    @Override
+    public boolean receiveFluid(IWorld worldIn, BlockPos pos, IBlockState state, IFluidState fluidStateIn) {
+        if (!state.get(WATERLOGGED) && fluidStateIn.getFluid() == Fluids.WATER) {
+            if (!worldIn.isRemote()) {
+                worldIn.setBlockState(pos, state.with(WATERLOGGED, true), 3);
+                worldIn.getPendingFluidTicks().scheduleTick(pos, fluidStateIn.getFluid(), fluidStateIn.getFluid().getTickRate(worldIn));
+            }
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public Fluid pickupFluid(IWorld worldIn, BlockPos pos, IBlockState state) {
+        if (state.get(WATERLOGGED)) {
+            worldIn.setBlockState(pos, state.with(WATERLOGGED, false), 3);
+            return Fluids.WATER;
+        }
+        return Fluids.EMPTY;
     }
 }

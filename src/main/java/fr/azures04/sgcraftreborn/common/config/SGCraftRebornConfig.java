@@ -40,7 +40,7 @@ public class SGCraftRebornConfig {
     public static ForgeConfigSpec.IntValue MAX_ENERGY_BUFFER;
     public static ForgeConfigSpec.IntValue EXPLOSION_RADIUS;
     public static ForgeConfigSpec.BooleanValue EXPLOSION_FLAME;
-    public static ForgeConfigSpec.BooleanValue EXPLOSION_SMOKE;
+    //public static ForgeConfigSpec.BooleanValue EXPLOSION_SMOKE;
     public static ForgeConfigSpec.BooleanValue TRANSPARENCY;
     public static ForgeConfigSpec.DoubleValue SOUND_VOLUME;
     public static ForgeConfigSpec.BooleanValue VARIABLE_CHEVRON_POSITIONS;
@@ -58,11 +58,11 @@ public class SGCraftRebornConfig {
                 .comment("Enables generating naquadah ore in the world.")
                 .define("enableNaquadahOre", true);
             ALLOW_CRAFTING_CRYSTALS = BUILDER
-                .comment("Enables recipes for crafting core and controller crystals from vanilla items.")
-                .define("allowCraftingCrystals", false);
+                .comment("Enables recipes for crafting core and controller crystals from vanilla items (must be true for 1.13.2 due to issue with loot tables).")
+                .define("allowCraftingCrystals", true);
             ALLOW_CRAFTING_NAQUADAH = BUILDER
-                .comment("Enables a recipe for crafting naquadah from vanilla items. Defaults to false.")
-                .define("allowCraftingNaquadah", false);
+                .comment("Enables a recipe for crafting naquadah from vanilla items. Defaults to false (must be true for 1.13.2 due to issue with loot tables).")
+                .define("allowCraftingNaquadah", true);
             AUGMENT_STRUCTURES = BUILDER
                 .comment("If true, stargates will be found assocated with certain structures in the world. Use with caution -- may be incompatible with other world generation mods.")
                 .define("augmentStructures", false);
@@ -138,9 +138,9 @@ public class SGCraftRebornConfig {
             EXPLOSION_FLAME = BUILDER
                 .comment("Whether a stargate explosion sets things on fire.")
                 .define("explosionFlame", true);
-            EXPLOSION_SMOKE = BUILDER
+            /*EXPLOSION_SMOKE = BUILDER
                 .comment("Whether a stargate explosion gives off smoke.")
-                .define("explosionSmoke", true);
+                .define("explosionSmoke", true);*/
             TRANSPARENCY = BUILDER
                 .comment("If true, the event horizon is rendered with partial transparency.")
                 .define("transparency", true);

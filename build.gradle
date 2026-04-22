@@ -1,14 +1,23 @@
 buildscript {
     repositories {
-        maven { url = "https://maven.minecraftforge.net/" }
+        maven {
+            name = "Forge's Maven"
+            url = "https://maven.minecraftforge.net/"
+        }
+        maven {
+            name = "SpongePowered"
+            url = "https://repo.spongepowered.org/repository/maven-public/"
+        }
         mavenCentral()
     }
     dependencies {
         classpath group: "net.minecraftforge.gradle", name: "ForgeGradle", version: "3.+", changing: true
+        classpath "org.spongepowered:mixingradle:0.7-SNAPSHOT"
     }
 }
 
 apply plugin: "net.minecraftforge.gradle"
+apply plugin: "org.spongepowered.mixin"
 apply plugin: "eclipse"
 apply plugin: "maven-publish"
 
@@ -80,6 +89,7 @@ def reobfArtifact = artifacts.add("default", reobfFile) {
     type "jar"
     builtBy "reobfJar"
 }
+
 publishing {
     publications {
         mavenJava(MavenPublication) {

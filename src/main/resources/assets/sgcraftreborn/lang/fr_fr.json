@@ -6,11 +6,14 @@
     "block.sgcraftreborn.naquadah_block": "Bloc d'alliage de Naquadah",
     "block.sgcraftreborn.naquadah_ore": "Minerai de Naquadah",
     "block.sgcraftreborn.stargate_controller": "DHD (Contrôleur de Porte)",
+    "block.sgcraftreborn.rf_power_unit": "Unité d'alimentation (RF)",
+    "block.sgcraftreborn.cc_interface": "CTT Peripheral Interface",
     "item.sgcraftreborn.stargate_iris_blade": "Lame d'iris de la Porte des Étoiles",
     "item.sgcraftreborn.stargate_iris_upgarde": "Amélioration d'iris pour Porte des Étoiles",
     "item.sgcraftreborn.stargate_chevron_upgrade": "Amélioration de chevron pour Porte des Étoiles",
     "item.sgcraftreborn.naquadah_ingot": "Lingot d'alliage de Naquadah",
     "item.sgcraftreborn.naquadah": "Naquadah",
     "item.sgcraftreborn.stargate_core_crystal": "Cristal de cœur de la Porte des Étoiles",
-    "item.sgcraftreborn.stargate_controller_crystal": "Cristal de contrôle de la Porte des Étoiles"
+    "item.sgcraftreborn.stargate_controller_crystal": "Cristal de contrôle de la Porte des Étoiles",
+    "container.sgcraftreborn.power": "Unité d'alimentation (RF)"
 }

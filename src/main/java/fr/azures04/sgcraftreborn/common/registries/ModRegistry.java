@@ -5,6 +5,7 @@ import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.tileentity.TileEntityType;
+import net.minecraft.util.SoundEvent;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.registries.IForgeRegistry;
@@ -16,8 +17,6 @@ public class ModRegistry {
         IForgeRegistry<Block> registry = event.getRegistry();
         ModBlocks.BLOCKS_TO_REGISTER.forEach(event.getRegistry()::register);
     }
-
-
 
     @SubscribeEvent
     public static void onItemsRegistry(final RegistryEvent.Register<Item> event) {
@@ -40,5 +39,11 @@ public class ModRegistry {
     public static void onTileEntityRegistry(final RegistryEvent.Register<TileEntityType<?>> event) {
         ModTilesEntities.TILE_ENTITY_TYPES.forEach(event.getRegistry()::register);
     }
+
+    @SubscribeEvent
+    public static void onSoundsRegistry(final RegistryEvent.Register<SoundEvent> event) {
+        ModSounds.SOUNDS_TO_REGISTER.forEach(event.getRegistry()::register);
+    }
+
 
 }

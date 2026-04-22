@@ -6,6 +6,8 @@ import fr.azures04.sgcraftreborn.client.registries.ModContainers;
 import fr.azures04.sgcraftreborn.common.Constants;
 import fr.azures04.sgcraftreborn.common.config.SGCraftRebornConfig;
 import fr.azures04.sgcraftreborn.common.config.conditions.CraftingConditions;
+import fr.azures04.sgcraftreborn.common.integrations.Integrations;
+import fr.azures04.sgcraftreborn.common.listeners.LootTableHandler;
 import fr.azures04.sgcraftreborn.common.network.StargateNetwork;
 import fr.azures04.sgcraftreborn.common.registries.ModRegistry;
 import fr.azures04.sgcraftreborn.common.registries.tiles.StargateBaseTileEntity;
@@ -39,6 +41,7 @@ public class SGCraftReborn {
 
     private void setup(final FMLCommonSetupEvent event) {
         StargateNetwork.registerPackets();
+        Integrations.setup();
     }
 
     private void clientSetup(final FMLClientSetupEvent event) {

@@ -1,6 +1,7 @@
 package fr.azures04.sgcraftreborn.client.models.tiles;
 
 import fr.azures04.sgcraftreborn.common.Constants;
+import fr.azures04.sgcraftreborn.common.config.SGCraftRebornConfig;
 import fr.azures04.sgcraftreborn.common.registries.blocks.StargateBaseBlock;
 import fr.azures04.sgcraftreborn.common.registries.tiles.StargateBaseTileEntity;
 import fr.azures04.sgcraftreborn.common.registries.tiles.states.StargateIrisState;
@@ -17,6 +18,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.items.CapabilityItemHandler;
+import org.lwjgl.opengl.GL13;
 
 import java.util.Objects;
 
@@ -127,24 +129,42 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
         tileEntityIn.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY).ifPresent(inventory -> {
             BlockRendererDispatcher dispatcher = Minecraft.getInstance().getBlockRendererDispatcher();
 
+            int combinedLight = tileEntityIn.getWorld().getCombinedLight(tileEntityIn.getPos(), 0);
+            int lightX = combinedLight % 65536;
+            int lightY = combinedLight / 65536;
+
+            GlStateManager.activeTexture(GL13.GL_TEXTURE1);
+            GlStateManager.enableTexture2D();
+            GL13.glMultiTexCoord2f(GL13.GL_TEXTURE1, (float) lightX, (float) lightY);
+
+            GlStateManager.activeTexture(GL13.GL_TEXTURE0);
             this.bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
+
+            RenderHelper.enableStandardItemLighting();
 
             for (int i = 0; i < 5; i++) {
                 ItemStack stack = inventory.getStackInSlot(i);
-                if (stack.isEmpty()) {
-                    continue;
-                }
+                if (stack.isEmpty()) continue;
 
                 Block block = Block.getBlockFromItem(stack.getItem());
-                if (block == Blocks.AIR) {
-                    continue;
-                }
+                if (block == Blocks.AIR) continue;
+
                 IBlockState state = block.getDefaultState();
+
                 GlStateManager.pushMatrix();
-                GlStateManager.translatef(i - 2.5f, -2.5f, 0.5f);
+
+                GlStateManager.translatef(i - 3.5f, -2.5f, -0.5f);
+
+                GlStateManager.translatef(0.5f, 0.5f, 0.5f);
+                GlStateManager.rotatef(-90.0f, 0.0f, 1.0f, 0.0f);
+                GlStateManager.translatef(-0.5f, -0.5f, -0.5f);
+
                 dispatcher.renderBlockBrightness(state, 1.0f);
+
                 GlStateManager.popMatrix();
             }
+
+            RenderHelper.disableStandardItemLighting();
         });
     }
 
@@ -256,8 +276,12 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
     private void renderEventHorizon(StargateBaseTileEntity te, BufferBuilder buffer, Tessellator tessellator) {
         this.bindTexture(new ResourceLocation(Constants.MOD_ID, "textures/tileentity/eventhorizon.png"));
         GlStateManager.disableCull();
-        GlStateManager.enableBlend();
-        GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+
+        boolean useTransparency = SGCraftRebornConfig.TRANSPARENCY.get();
+        if (useTransparency) {
+            GlStateManager.enableBlend();
+            GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+        }
 
         double rclip = 2.5;
         if (te.getIrisState() == StargateIrisState.CLOSED || te.getIrisState() == StargateIrisState.CLOSING) {

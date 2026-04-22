@@ -12,7 +12,7 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CCTweaked extends StargateAbstractAPI implements IPeripheral {
+public class CCTPeripheral extends StargateAbstractAPI implements IPeripheral {
 
     private final List<IComputerAccess> connectedComputers = new ArrayList<>();
     private final String[] METHOD_NAMES = new String[] {
@@ -29,7 +29,7 @@ public class CCTweaked extends StargateAbstractAPI implements IPeripheral {
         "sendMessage"
     };
 
-    public CCTweaked(StargateBaseTileEntity stargate) {
+    public CCTPeripheral(StargateBaseTileEntity stargate) {
         super(stargate);
     }
 
@@ -42,7 +42,7 @@ public class CCTweaked extends StargateAbstractAPI implements IPeripheral {
     @Nonnull
     @Override
     public String[] getMethodNames() {
-        return new String[0];
+        return METHOD_NAMES;
     }
 
     @Nullable

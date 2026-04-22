@@ -4,15 +4,22 @@ import fr.azures04.sgcraftreborn.SGCraftReborn;
 import fr.azures04.sgcraftreborn.common.network.StargateNetwork;
 import fr.azures04.sgcraftreborn.common.network.packets.StargateCloseVortexPacket;
 import fr.azures04.sgcraftreborn.common.network.packets.StargateDialPacket;
+import fr.azures04.sgcraftreborn.common.network.packets.StargateUpdateBufferPacket;
+import fr.azures04.sgcraftreborn.common.registries.ModSounds;
 import fr.azures04.sgcraftreborn.common.registries.blocks.states.StargateControllerStatus;
+import fr.azures04.sgcraftreborn.common.registries.tiles.StargateControllerTileEntity;
 import fr.azures04.sgcraftreborn.common.util.math.ExtendedPos;
+import net.minecraft.client.audio.SimpleSound;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.init.SoundEvents;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ResourceLocation;
 
 import fr.azures04.sgcraftreborn.common.Constants;
 import fr.azures04.sgcraftreborn.common.world.StargateAddressing;
+import net.minecraft.util.SoundCategory;
 import org.apache.logging.log4j.Level;
 
 public class StargateControllerScreen extends GuiScreen {
@@ -54,6 +61,11 @@ public class StargateControllerScreen extends GuiScreen {
     @Override
     protected void initGui() {
         super.initGui();
+
+        TileEntity te = mc.world.getTileEntity(controllerPos.getPos());
+        if (te instanceof StargateControllerTileEntity) {
+            this.enteredAddress = ((StargateControllerTileEntity) te).getDialingBuffer();
+        }
 
         if (this.mc != null && this.mc.mouseHelper != null) {
             this.mc.mouseHelper.ungrabMouse();
@@ -191,9 +203,8 @@ public class StargateControllerScreen extends GuiScreen {
     }
 
     private void dhdButtonPressed(int id) {
-        buttonSound();
-        SGCraftReborn.LOGGER.log(Level.INFO, "buttonId: " + id);
         if (id == 0) {
+            mc.getSoundHandler().play(SimpleSound.master(ModSounds.DHD_DIAL, 1.0F));
             switch (status) {
                 case LINKED:
                     if (enteredAddress.length() == 7 || enteredAddress.length() == 9) {
@@ -207,13 +218,15 @@ public class StargateControllerScreen extends GuiScreen {
             this.close();
         } else if (id >= 37) {
             backspace();
+            updateServerBuffer();
         } else {
+            buttonSound();
             enterCharacter(SGCraftSymbolToChar(id - 1));
         }
     }
 
     private void buttonSound() {
-        //this.mc.getSoundHandler().play(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+        mc.getSoundHandler().play(SimpleSound.master(ModSounds.DHD_PRESS, 1.0F));
     }
 
     @Override
@@ -221,6 +234,7 @@ public class StargateControllerScreen extends GuiScreen {
         String c = String.valueOf(codePoint).toUpperCase();
         if (Character.isLetterOrDigit(codePoint)) {
             enterCharacter(c.charAt(0));
+            updateServerBuffer();
             return true;
         }
         return super.charTyped(codePoint, modifiers);
@@ -232,11 +246,9 @@ public class StargateControllerScreen extends GuiScreen {
             this.close();
             return true;
         }
-        if (this.status == StargateControllerStatus.LINKED) {
-
-        }
         if (keyCode == 259 || keyCode == 261) {
             backspace();
+            updateServerBuffer();
             return true;
         } else if (keyCode == 257 || keyCode == 335) {
             dhdButtonPressed(0);
@@ -275,5 +287,9 @@ public class StargateControllerScreen extends GuiScreen {
     private int SGCraftCharToSymbol(char c) {
         String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         return chars.indexOf(Character.toUpperCase(c));
+    }
+
+    private void updateServerBuffer() {
+        StargateNetwork.INSTANCE.sendToServer(new StargateUpdateBufferPacket(controllerPos.getPos(), this.enteredAddress));
     }
 }

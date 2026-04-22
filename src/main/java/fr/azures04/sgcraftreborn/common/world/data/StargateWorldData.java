@@ -48,11 +48,11 @@ public class StargateWorldData extends WorldSavedData {
         NBTTagList list = new NBTTagList();
         for (Map.Entry<String, ExtendedPos> entry : stargates.entrySet()) {
             NBTTagCompound tag = new NBTTagCompound();
-            compound.putString("a", entry.getKey());
-            compound.putInt("x", entry.getValue().getX());
-            compound.putInt("y", entry.getValue().getY());
-            compound.putInt("z", entry.getValue().getZ());
-            compound.putInt("d", entry.getValue().getDimension());
+            tag.putString("a", entry.getKey());
+            tag.putInt("x", entry.getValue().getX());
+            tag.putInt("y", entry.getValue().getY());
+            tag.putInt("z", entry.getValue().getZ());
+            tag.putInt("d", entry.getValue().getDimension());
             list.add(tag);
         }
         compound.put("stargates", list);

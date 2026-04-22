@@ -47,6 +47,7 @@ public class StargateControllerTileEntity extends TileEntity implements IInterac
     private ExtendedPos linkedStargate;
     private final ItemStackHandler inventory = new ItemStackHandler(4);
     private final LazyOptional<IItemHandler> inventoryHolder = LazyOptional.of(() -> inventory);
+    private String dialingBuffer = "";
 
     public StargateControllerTileEntity() {
         super(ModTilesEntities.STARGATE_CONTROLLER_BLOCK);
@@ -66,12 +67,12 @@ public class StargateControllerTileEntity extends TileEntity implements IInterac
 
     public void setFuelLevel(double fuelLevel) {
         this.fuelLevel = fuelLevel;
-        markDirty();
+        sync();
     }
 
     public void setLinkedStargate(ExtendedPos linkedStargate) {
         this.linkedStargate = linkedStargate;
-        markDirty();
+        sync();
     }
 
     private StargateBaseTileEntity searchNearbyStargate(World world) {
@@ -105,7 +106,7 @@ public class StargateControllerTileEntity extends TileEntity implements IInterac
         gate.setControllerPos(new ExtendedPos(pos, world.getDimension().getType().getId()));
         IBlockState state = world.getBlockState(pos);
         world.setBlockState(pos, state.with(StargateControllerBlock.STATUS, StargateControllerStatus.LINKED), 3);
-        markDirty();
+        sync();
     }
 
     public StargateBaseTileEntity getLinkedStargateTE(World world) {
@@ -125,28 +126,30 @@ public class StargateControllerTileEntity extends TileEntity implements IInterac
         setLinkedStargate(null);
         IBlockState state = world.getBlockState(pos);
         world.setBlockState(pos, state.with(StargateControllerBlock.STATUS, StargateControllerStatus.UNLINKED), 3);
-        markDirty();
+        sync();
     }
 
     @Override
     public void read(NBTTagCompound compound) {
         super.read(compound);
-        fuelLevel = compound.getDouble("fuelLevel");
+        this.fuelLevel = compound.getDouble("fuelLevel");
         if (compound.contains("connectedX", 3)) {
-            linkedStargate = new ExtendedPos(
-                compound.getInt("connectedX"),
-                compound.getInt("connectedY"),
-                compound.getInt("connectedZ"),
-                compound.getInt("connectedD")
+            this.linkedStargate = new ExtendedPos(
+                    compound.getInt("connectedX"),
+                    compound.getInt("connectedY"),
+                    compound.getInt("connectedZ"),
+                    compound.getInt("connectedD")
             );
         }
         if (compound.contains("inventory", 10)) {
-            inventory.deserializeNBT(compound.getCompound("inventory"));
+            this.inventory.deserializeNBT(compound.getCompound("inventory"));
         }
+        this.dialingBuffer = compound.getString("dialingBuffer");
     }
 
     @Override
     public NBTTagCompound write(NBTTagCompound compound) {
+        super.write(compound);
         compound.putDouble("fuelLevel", fuelLevel);
         if (linkedStargate != null) {
             compound.putInt("connectedX", linkedStargate.getX());
@@ -155,7 +158,8 @@ public class StargateControllerTileEntity extends TileEntity implements IInterac
             compound.putInt("connectedD", linkedStargate.getDimension());
         }
         compound.put("inventory", inventory.serializeNBT());
-        return super.write(compound);
+        compound.putString("dialingBuffer", dialingBuffer);
+        return compound;
     }
 
     @Override
@@ -221,6 +225,7 @@ public class StargateControllerTileEntity extends TileEntity implements IInterac
             return "stargate.error.insufficient_power";
         }
 
+        setDialingBuffer("");
         localGate.startDialing(address, remotePos, true, distanceFactor);
 
         return null;
@@ -346,5 +351,22 @@ public class StargateControllerTileEntity extends TileEntity implements IInterac
             }
         }
         return false;
+    }
+
+    public String getDialingBuffer() {
+        return dialingBuffer;
+    }
+
+    public void setDialingBuffer(String buffer) {
+        this.dialingBuffer = buffer;
+        sync();
+    }
+
+    public void sync() {
+        markDirty();
+        if (world != null && !world.isRemote) {
+            IBlockState state = world.getBlockState(pos);
+            world.notifyBlockUpdate(pos, state, state, 3);
+        }
     }
 }

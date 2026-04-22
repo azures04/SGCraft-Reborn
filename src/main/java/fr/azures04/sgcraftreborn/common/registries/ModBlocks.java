@@ -26,9 +26,9 @@ public class ModBlocks {
     private static final Block.Properties defaultProperties = Block.Properties.create(Material.IRON).hardnessAndResistance(15.0F);
 
     static {
-        STARGATE_RING = register("stargate_ring", new StargateRingBlock(defaultProperties));
-        STARGATE_CHEVRON = register("stargate_chevron", new StargateChevronBlock(defaultProperties));
-        STARGATE_BASE = register("stargate_base", new StargateBaseBlock(defaultProperties));
+        STARGATE_RING = register("stargate_ring", new StargateRingBlock(defaultProperties.lightValue(0).variableOpacity()));
+        STARGATE_CHEVRON = register("stargate_chevron", new StargateChevronBlock(defaultProperties.lightValue(0).variableOpacity()));
+        STARGATE_BASE = register("stargate_base", new StargateBaseBlock(defaultProperties.lightValue(0).variableOpacity()));
         STARGATE_CONTROLLER = register("stargate_controller", new StargateControllerBlock(defaultProperties));
         NAQUADAH_ORE = register("naquadah_ore", new Block(defaultProperties));
         NAQUADAH_BLOCK = register("naquadah_block", new Block(defaultProperties));
