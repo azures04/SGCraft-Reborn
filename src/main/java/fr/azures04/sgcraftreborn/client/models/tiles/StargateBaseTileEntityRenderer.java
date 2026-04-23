@@ -115,10 +115,9 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
         if (tileEntityIn.hasIrisUpgrade()) {
             renderIris(tileEntityIn, buffer, tessellator, partialTicks);
         }
-        if (tileEntityIn.getVortexState() == StargateVortexState.ACTIVE) {
+        if (tileEntityIn.getVortexState() != StargateVortexState.IDLE && tileEntityIn.getVortexState() != StargateVortexState.DIALLING) {
             renderEventHorizon(tileEntityIn, buffer, tessellator);
         }
-
         renderCamouflage(tileEntityIn);
 
         GlStateManager.disableRescaleNormal();
@@ -274,17 +273,19 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
     }
 
     private void renderEventHorizon(StargateBaseTileEntity te, BufferBuilder buffer, Tessellator tessellator) {
+        GlStateManager.pushMatrix();
         this.bindTexture(new ResourceLocation(Constants.MOD_ID, "textures/tileentity/eventhorizon.png"));
         GlStateManager.disableCull();
+        GlStateManager.disableLighting();
 
-        boolean useTransparency = SGCraftRebornConfig.TRANSPARENCY.get();
+        boolean useTransparency = fr.azures04.sgcraftreborn.common.config.SGCraftRebornConfig.TRANSPARENCY.get();
         if (useTransparency) {
             GlStateManager.enableBlend();
             GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
         }
 
         double rclip = 2.5;
-        if (te.getIrisState() == StargateIrisState.CLOSED || te.getIrisState() == StargateIrisState.CLOSING) {
+        if (te.getIrisState() != StargateIrisState.OPEN) {
             double phase = te.getLastIrisPhase() + (te.getIrisPhase() - te.getLastIrisPhase()) * Minecraft.getInstance().getRenderPartialTicks();
             rclip = 2.5 * (phase / 60.0);
         }
@@ -301,14 +302,19 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
         }
 
         buffer.begin(6, DefaultVertexFormats.POSITION_TEX_NORMAL);
+
         buffer.pos(0, 0, ehClip(grid[1][0], 0, rclip)).tex(0, 0).normal(0, 0, 1).endVertex();
         for (int j = 0; j <= ehGridPolarSize; j++) {
             ehVertex(buffer, grid, 1, j, rclip);
         }
         tessellator.draw();
 
-        GlStateManager.disableBlend();
+        GlStateManager.enableLighting();
+        if (useTransparency) {
+            GlStateManager.disableBlend();
+        }
         GlStateManager.enableCull();
+        GlStateManager.popMatrix();
     }
 
     private void renderIris(StargateBaseTileEntity te, BufferBuilder buffer, Tessellator tessellator, float partialTicks) {
@@ -358,28 +364,16 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
 
     private void ehVertex(BufferBuilder buffer, double[][] grid, int i, int j, double rclip) {
         double r = i * ehBandWidth;
+        double x = r * c[j];
+        double y = r * s[j];
+        double z = ehClip(grid[j][i], r, rclip);
 
-        double z = ehClip(grid[j + 1][i], r, rclip);
-
-        double maxVisualDepth = 5.0;
-        double scale = 1.0;
-
-        if (z > 0) {
-            scale = Math.max(0.0, 1.0 - (z / maxVisualDepth));
-        }
-
-        double x = r * c[j] * scale;
-        double y = r * s[j] * scale;
-
-        double u = r * c[j];
-        double v = r * s[j];
-
-        vertexUV(buffer, x, y, z, u, v);
+        buffer.pos(x, y, z).tex(x, y).normal(0, 0, 1).endVertex();
     }
 
     private double ehClip(double z, double r, double rclip) {
         if (r >= rclip) {
-            z = Math.min(z, 0);
+            return Math.min(z, 0);
         }
         return z;
     }

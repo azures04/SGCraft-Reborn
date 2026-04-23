@@ -948,14 +948,25 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
         for (int i = 1; i < ehGridRadialSize; i++) {
             for (int j = 1; j <= ehGridPolarSize; j++) {
                 double du_dr = 0.5 * (u[j][i + 1] - u[j][i - 1]);
-                double d2u_drsq = u[j][i + 1] - 2 * u[j][i] + u[j - 1][i - 1]; // Correction structurelle interne préservée
+                double d2u_drsq = u[j][i + 1] - 2 * u[j][i] + u[j][i - 1];
                 double d2u_dthsq = u[j + 1][i] - 2 * u[j][i] + u[j - 1][i];
+
                 v[j][i] = d * v[j][i] + (asq * dt) * (d2u_drsq + du_dr / i + d2u_dthsq / (i * i));
+
+                if (Double.isNaN(v[j][i])) v[j][i] = 0;
             }
         }
+
         for (int i = 1; i < ehGridRadialSize; i++) {
             for (int j = 1; j <= ehGridPolarSize; j++) {
                 u[j][i] += v[j][i] * dt;
+            }
+        }
+
+        for (int i = 0; i < 2; i++) {
+            for (int r = 0; r <= ehGridRadialSize; r++) {
+                grid[i][0][r] = grid[i][ehGridPolarSize][r];
+                grid[i][ehGridPolarSize + 1][r] = grid[i][1][r];
             }
         }
 
@@ -967,7 +978,7 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
         u0 /= ehGridPolarSize;
         v0 /= ehGridPolarSize;
 
-        for (int j = 1; j <= ehGridPolarSize; j++) {
+        for (int j = 1; j <= ehGridPolarSize + 1; j++) {
             u[j][0] = u0;
             v[j][0] = v0;
         }
