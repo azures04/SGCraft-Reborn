@@ -243,12 +243,9 @@ public class StargateBaseBlock extends Block implements ILiquidContainer, IBucke
         if (!worldIn.isRemote) {
             StargateBaseTileEntity base = (StargateBaseTileEntity) worldIn.getTileEntity(pos);
             if (base != null && base.getVortexState() != StargateVortexState.IDLE) {
-
                 int radius = SGCraftRebornConfig.EXPLOSION_RADIUS.get();
-
                 if (radius > 0) {
                     boolean causesFire = SGCraftRebornConfig.EXPLOSION_FLAME.get();
-
                     worldIn.createExplosion(null, pos.getX() + 0.5, pos.getY() + 2.5, pos.getZ() + 0.5, (float)radius, causesFire);
                 }
             }

@@ -486,12 +486,12 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
 
     public void setIrisDeployed(boolean deploy) {
         float vol = SGCraftRebornConfig.SOUND_VOLUME.get().floatValue();
-        if (deploy && irisState == StargateIrisState.OPEN) {
+        if (deploy) {
             irisState = StargateIrisState.CLOSING;
             world.playSound(null, pos, ModSounds.IRIS_CLOSE, SoundCategory.BLOCKS, vol, 1.0F);
             irisTimeout = 60;
             sync();
-        } else if (!deploy && irisState == StargateIrisState.CLOSED) {
+        } else if (!deploy) {
             irisState = StargateIrisState.OPENING;
             world.playSound(null, pos, ModSounds.IRIS_OPEN, SoundCategory.BLOCKS, vol, 1.0F);
             irisTimeout = 60;
