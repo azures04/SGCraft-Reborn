@@ -13,7 +13,7 @@ public class ModBlocks {
 
     public static final List<Block> BLOCKS_TO_REGISTER = new ArrayList<>();
 
-    public static final Block NAQUADAH_ORE;
+    public static final NaqudahOreBlock NAQUADAH_ORE;
     public static final Block NAQUADAH_BLOCK;
     public static final StargateBaseBlock STARGATE_BASE;
     public static final StargateRingBlock STARGATE_RING;
@@ -30,7 +30,7 @@ public class ModBlocks {
         STARGATE_CHEVRON = register("stargate_chevron", new StargateChevronBlock(defaultProperties.lightValue(0).variableOpacity()));
         STARGATE_BASE = register("stargate_base", new StargateBaseBlock(defaultProperties.lightValue(0).variableOpacity()));
         STARGATE_CONTROLLER = register("stargate_controller", new StargateControllerBlock(defaultProperties));
-        NAQUADAH_ORE = register("naquadah_ore", new Block(defaultProperties));
+        NAQUADAH_ORE = register("naquadah_ore", new NaqudahOreBlock(defaultProperties));
         NAQUADAH_BLOCK = register("naquadah_block", new Block(defaultProperties));
 
         if (ModList.get().isLoaded("computercraft")) {

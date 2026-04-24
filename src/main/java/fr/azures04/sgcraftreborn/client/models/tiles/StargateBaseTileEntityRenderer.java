@@ -86,7 +86,13 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
     public void render(StargateBaseTileEntity tileEntityIn, double x, double y, double z, float partialTicks, int destroyStage) {
         if (!tileEntityIn.isMerged()) return;
 
-        EnumFacing facing = Objects.requireNonNull(tileEntityIn.getWorld()).getBlockState(tileEntityIn.getPos()).get(StargateBaseBlock.FACING);
+        IBlockState state = tileEntityIn.getWorld().getBlockState(tileEntityIn.getPos());
+
+        if (!(state.getBlock() instanceof StargateBaseBlock)) {
+            return;
+        }
+
+        EnumFacing facing = state.get(StargateBaseBlock.FACING);
 
         GlStateManager.pushMatrix();
         GlStateManager.translated(x + 0.5, y + 0.5, z + 0.5);
