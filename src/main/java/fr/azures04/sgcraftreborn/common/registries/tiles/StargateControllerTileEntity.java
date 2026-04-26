@@ -65,6 +65,10 @@ public class StargateControllerTileEntity extends TileEntity implements IInterac
         return fuelLevel;
     }
 
+    public boolean isLinked() {
+        return linkedStargate != null;
+    }
+
     public void setFuelLevel(double fuelLevel) {
         this.fuelLevel = fuelLevel;
         sync();

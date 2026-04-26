@@ -113,8 +113,10 @@ public class StargateControllerBlock extends Block implements ISpecialItemRender
             if (side == EnumFacing.UP) {
                 ExtendedPos controllerPos = new ExtendedPos(pos, worldIn.dimension.getType().getId());
                 StargateControllerTileEntity controller = (StargateControllerTileEntity) worldIn.getTileEntity(pos);
-                StargateBaseTileEntity base = (StargateBaseTileEntity) worldIn.getTileEntity(controller.getLinkedStargate());
-                Minecraft.getInstance().displayGuiScreen(new StargateControllerScreen(controllerPos, state.get(STATUS), base.hasChevronUpgrade()));
+                if (controller.isLinked()) {
+                    StargateBaseTileEntity base = (StargateBaseTileEntity) worldIn.getTileEntity(controller.getLinkedStargate());
+                    Minecraft.getInstance().displayGuiScreen(new StargateControllerScreen(controllerPos, state.get(STATUS), base.hasChevronUpgrade()));
+                }
                 return true;
             }
         }

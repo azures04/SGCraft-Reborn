@@ -21,7 +21,7 @@ apply plugin: "org.spongepowered.mixin"
 apply plugin: "eclipse"
 apply plugin: "maven-publish"
 
-version = "1.0"
+version = "0.0.3-alpha"
 group = "fr.azures04.sgcraftreborn"
 archivesBaseName = "sgcraftreborn"
 
