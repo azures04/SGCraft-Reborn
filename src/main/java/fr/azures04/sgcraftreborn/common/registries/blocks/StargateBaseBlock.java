@@ -43,7 +43,7 @@ import javax.annotation.Nullable;
 
 public class StargateBaseBlock extends Block implements ILiquidContainer, IBucketPickupHandler {
 
-    public static final DirectionProperty FACING = BlockStateProperties.FACING;
+    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final BooleanProperty INVISIBLE = BooleanProperty.create("invisible");
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 
@@ -95,7 +95,7 @@ public class StargateBaseBlock extends Block implements ILiquidContainer, IBucke
     @Override
     public IBlockState getStateForPlacement(BlockItemUseContext context) {
         return (IBlockState) this.getDefaultState()
-            .with(FACING, context.getNearestLookingDirection().getOpposite())
+            .with(FACING, context.getPlacementHorizontalFacing().getOpposite())
             .with(INVISIBLE, false)
             .with(WATERLOGGED, false);
     }

@@ -43,12 +43,13 @@ import net.minecraftforge.items.CapabilityItemHandler;
 
 public class StargateControllerBlock extends Block implements ISpecialItemRenderer, ILiquidContainer, IBucketPickupHandler {
     public static final DirectionProperty FACING;
-    public static final EnumProperty < StargateControllerStatus > STATUS;
+    public static final EnumProperty <StargateControllerStatus> STATUS;
     public static final BooleanProperty WATERLOGGED;
 
     public StargateControllerBlock(Block.Properties properties) {
         super(properties);
-        this.setDefaultState((IBlockState)((IBlockState)((IBlockState)((IBlockState) this.stateContainer.getBaseState()).with(FACING, EnumFacing.NORTH)).with(STATUS, StargateControllerStatus.UNLINKED)).with(WATERLOGGED, false));
+        this.setDefaultState((IBlockState)((IBlockState)((IBlockState)((IBlockState) this.stateContainer.getBaseState())
+                .with(FACING, EnumFacing.NORTH)).with(STATUS, StargateControllerStatus.UNLINKED)).with(WATERLOGGED, false));
     }
 
     public boolean hasTileEntity(IBlockState state) {
@@ -146,7 +147,7 @@ public class StargateControllerBlock extends Block implements ISpecialItemRender
                     });
                 }
             }
-            super.onReplaced(state, worldIn, pos, newState, isMoving); // ← appelé des deux côtés
+            super.onReplaced(state, worldIn, pos, newState, isMoving);
         }
     }
 
