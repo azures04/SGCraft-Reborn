@@ -102,6 +102,7 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
 
     @Override
     public NBTTagCompound write(NBTTagCompound compound) {
+        ;
         compound.putBoolean("isMerged", isMerged);
         compound.putBoolean("isInitiator", isInitiator);
         compound.putString("dialledAddress", dialledAddress == null ? "" : dialledAddress);
@@ -844,10 +845,15 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
         double gateY = pos.getY() + 2.5;
         double gateZ = pos.getZ() + 0.5;
 
-        double maxDepth = 6.0;
+        double maxDepth = 4.0 * Math.sin(Math.PI * (double) (TRANSIENT_DURATION - timeout) / (double) TRANSIENT_DURATION);
         double maxRadius = 2.0;
 
+        if (maxDepth <= 0) return;
+
+        if (maxDepth <= 0) return;
+
         float vol = SGCraftRebornConfig.SOUND_VOLUME.get().floatValue();
+
         for (Entity entity : entities) {
             double eX = entity.posX;
             double eY = entity.posY + (entity.height / 2.0);
@@ -866,13 +872,11 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
                 distanceAlongAxis = Math.abs(eY - gateY);
                 distanceFromAxis = Math.sqrt(Math.pow(eX - gateX, 2) + Math.pow(eZ - gateZ, 2));
             }
-            double currentRadius = maxRadius * (1.0 - (distanceAlongAxis / maxDepth));
 
-            double trueDistance = distanceFromAxis - (entity.width / 2.0);
-
-            if (distanceAlongAxis <= maxDepth && trueDistance <= currentRadius) {
+            if (distanceAlongAxis <= maxDepth && distanceFromAxis <= maxRadius) {
                 world.playSound(null, pos, ModSounds.IRIS_HIT, SoundCategory.BLOCKS, vol, 1.0F);
-                entity.attackEntityFrom(DamageSource.MAGIC, Float.MAX_VALUE);
+                entity.hurtResistantTime = 0;
+                entity.attackEntityFrom(DamageSource.OUT_OF_WORLD, Float.MAX_VALUE);
             }
         }
     }
@@ -914,10 +918,16 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
     }
 
     public void initiateOpeningTransient() {
-        double[][] v = getEventHorizonGrid()[1];
+        double[][][] grid = getEventHorizonGrid();
+        double[][] u = grid[0];
+        double[][] v = grid[1];
         for (int j = 0; j <= ehGridPolarSize + 1; j++) {
-            v[j][0] = 4.0;
-            v[j][1] = v[j][0] + 0.25 * random.nextGaussian();
+            for (int i = 0; i <= ehGridRadialSize; i++) {
+                u[j][i] = 0;
+                v[j][i] = 0;
+            }
+            v[j][ehGridRadialSize - 1] = 4.0;
+            v[j][ehGridRadialSize - 2] = 4.0 + 0.25 * random.nextGaussian();
         }
     }
 
@@ -939,8 +949,10 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
 
     public void updateEventHorizon() {
         double[][][] grid = getEventHorizonGrid();
+
         double[][] u = grid[0];
         double[][] v = grid[1];
+
         double dt = 1.0;
         double asq = 0.03;
         double d = 0.95;
@@ -952,7 +964,6 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
                 double d2u_dthsq = u[j + 1][i] - 2 * u[j][i] + u[j - 1][i];
 
                 v[j][i] = d * v[j][i] + (asq * dt) * (d2u_drsq + du_dr / i + d2u_dthsq / (i * i));
-
                 if (Double.isNaN(v[j][i])) v[j][i] = 0;
             }
         }
@@ -963,10 +974,10 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
             }
         }
 
-        for (int i = 0; i < 2; i++) {
+        for (int layer = 0; layer < 2; layer++) {
             for (int r = 0; r <= ehGridRadialSize; r++) {
-                grid[i][0][r] = grid[i][ehGridPolarSize][r];
-                grid[i][ehGridPolarSize + 1][r] = grid[i][1][r];
+                grid[layer][0][r] = grid[layer][ehGridPolarSize][r];
+                grid[layer][ehGridPolarSize + 1][r] = grid[layer][1][r];
             }
         }
 
@@ -978,7 +989,7 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
         u0 /= ehGridPolarSize;
         v0 /= ehGridPolarSize;
 
-        for (int j = 1; j <= ehGridPolarSize + 1; j++) {
+        for (int j = 0; j <= ehGridPolarSize + 1; j++) {
             u[j][0] = u0;
             v[j][0] = v0;
         }
@@ -1053,4 +1064,5 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
             adapter.queueEvent(eventName, args);
         }
     }
+
 }

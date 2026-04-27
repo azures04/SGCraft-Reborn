@@ -121,10 +121,13 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
         if (tileEntityIn.hasIrisUpgrade()) {
             renderIris(tileEntityIn, buffer, tessellator, partialTicks);
         }
+
+
+        renderCamouflage(tileEntityIn);
+
         if (tileEntityIn.getVortexState() != StargateVortexState.IDLE && tileEntityIn.getVortexState() != StargateVortexState.DIALLING) {
             renderEventHorizon(tileEntityIn, buffer, tessellator);
         }
-        renderCamouflage(tileEntityIn);
 
         GlStateManager.disableRescaleNormal();
         GlStateManager.popMatrix();
@@ -138,6 +141,8 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
             int lightX = combinedLight % 65536;
             int lightY = combinedLight / 65536;
 
+            GlStateManager.pushMatrix();
+
             GlStateManager.activeTexture(GL13.GL_TEXTURE1);
             GlStateManager.enableTexture2D();
             GL13.glMultiTexCoord2f(GL13.GL_TEXTURE1, (float) lightX, (float) lightY);
@@ -147,21 +152,56 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
 
             RenderHelper.enableStandardItemLighting();
 
+            EnumFacing facing = tileEntityIn.getWorld()
+                    .getBlockState(tileEntityIn.getPos())
+                    .get(StargateBaseBlock.FACING);
+
+            float rotY = facing.getHorizontalAngle();
+
             for (int i = 0; i < 5; i++) {
                 ItemStack stack = inventory.getStackInSlot(i);
                 if (stack.isEmpty()) continue;
-
                 Block block = Block.getBlockFromItem(stack.getItem());
                 if (block == Blocks.AIR) continue;
-
                 IBlockState state = block.getDefaultState();
 
                 GlStateManager.pushMatrix();
 
-                GlStateManager.translatef(i - 3.5f, -2.5f, -0.5f);
+                float offsetX = 0;
+                float offsetZ = 0;
+                float finalRot = rotY;
+
+                switch (facing) {
+                    case EAST:
+                        offsetX = i - 2.5f;
+                        offsetZ = -1.5f;
+                        finalRot = rotY - 90.0f;
+                        break;
+                    case WEST:
+                        offsetX = i - 2.5f;
+                        offsetZ = 0.5f;
+                        finalRot = rotY - 90.0f;
+                        break;
+                    case NORTH:
+                        offsetX = i - 1.5f;
+                        offsetZ = -0.5f;
+                        finalRot = rotY - 90;
+                        break;
+                    case SOUTH:
+                        offsetX = i - 3.5f;
+                        offsetZ = -0.5f;
+                        finalRot = rotY - 90.0f;
+                        break;
+                    default:
+                        offsetX = i - 3.5f;
+                        offsetZ = -0.5f;
+                        break;
+                }
+
+                GlStateManager.translatef(offsetX, -2.5f, offsetZ);
 
                 GlStateManager.translatef(0.5f, 0.5f, 0.5f);
-                GlStateManager.rotatef(-90.0f, 0.0f, 1.0f, 0.0f);
+                GlStateManager.rotatef(finalRot, 0.0f, 1.0f, 0.0f);
                 GlStateManager.translatef(-0.5f, -0.5f, -0.5f);
 
                 dispatcher.renderBlockBrightness(state, 1.0f);
@@ -170,6 +210,12 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
             }
 
             RenderHelper.disableStandardItemLighting();
+
+            GlStateManager.activeTexture(GL13.GL_TEXTURE1);
+            GlStateManager.disableTexture2D();
+            GlStateManager.activeTexture(GL13.GL_TEXTURE0);
+
+            GlStateManager.popMatrix();
         });
     }
 
@@ -284,6 +330,7 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
         GlStateManager.disableCull();
         GlStateManager.disableLighting();
 
+
         boolean useTransparency = fr.azures04.sgcraftreborn.common.config.SGCraftRebornConfig.TRANSPARENCY.get();
         if (useTransparency) {
             GlStateManager.enableBlend();
@@ -309,16 +356,18 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
 
         buffer.begin(6, DefaultVertexFormats.POSITION_TEX_NORMAL);
 
-        buffer.pos(0, 0, ehClip(grid[1][0], 0, rclip)).tex(0, 0).normal(0, 0, 1).endVertex();
+        buffer.pos(0, 0, ehClip(grid[1][0] * 0.09, 0, rclip)).tex(0, 0).normal(0, 0, 1).endVertex();
         for (int j = 0; j <= ehGridPolarSize; j++) {
             ehVertex(buffer, grid, 1, j, rclip);
         }
         tessellator.draw();
 
+        GlStateManager.depthMask(true);
         GlStateManager.enableLighting();
         if (useTransparency) {
             GlStateManager.disableBlend();
         }
+
         GlStateManager.enableCull();
         GlStateManager.popMatrix();
     }
@@ -372,7 +421,11 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
         double r = i * ehBandWidth;
         double x = r * c[j];
         double y = r * s[j];
-        double z = ehClip(grid[j][i], r, rclip);
+
+        double visualZ = grid[j][i] * 0.15;
+
+
+        double z = ehClip(visualZ, r, rclip);
 
         buffer.pos(x, y, z).tex(x, y).normal(0, 0, 1).endVertex();
     }

@@ -5,6 +5,7 @@ import fr.azures04.sgcraftreborn.common.config.SGCraftRebornConfig;
 import fr.azures04.sgcraftreborn.common.containers.StargateControllerFuelContainer;
 import fr.azures04.sgcraftreborn.common.containers.slots.NaquadahFuelSlot;
 import fr.azures04.sgcraftreborn.common.registries.ModTilesEntities;
+import fr.azures04.sgcraftreborn.common.registries.blocks.StargateBaseBlock;
 import fr.azures04.sgcraftreborn.common.registries.blocks.StargateControllerBlock;
 import fr.azures04.sgcraftreborn.common.registries.blocks.states.StargateControllerStatus;
 import fr.azures04.sgcraftreborn.common.registries.tiles.states.StargateVortexState;
@@ -100,29 +101,46 @@ public class StargateControllerTileEntity extends TileEntity implements IInterac
     }
 
     private void linkToStargate(StargateBaseTileEntity gate, World world) {
-        if (gate.getControllerPos() != null) {
+        ExtendedPos thisExtendedPos = new ExtendedPos(this.pos, world.getDimension().getType().getId());
+        if (gate.getControllerPos() != null && !gate.getControllerPos().equals(thisExtendedPos)) {
             TileEntity existing = world.getTileEntity(gate.getControllerPos());
             if (existing instanceof StargateControllerTileEntity) {
                 return;
             }
         }
+
         setLinkedStargate(new ExtendedPos(gate.getPos(), world.getDimension().getType().getId()));
         gate.setControllerPos(new ExtendedPos(pos, world.getDimension().getType().getId()));
+
         IBlockState state = world.getBlockState(pos);
-        world.setBlockState(pos, state.with(StargateControllerBlock.STATUS, StargateControllerStatus.LINKED), 3);
+        if (state.getBlock() instanceof StargateControllerBlock) {
+            world.setBlockState(pos, state.with(StargateControllerBlock.STATUS, StargateControllerStatus.LINKED), 3);
+        }
         sync();
     }
 
     public StargateBaseTileEntity getLinkedStargateTE(World world) {
         if (linkedStargate != null) {
-            TileEntity te = world.getTileEntity(linkedStargate);
-            if (te instanceof StargateBaseTileEntity && ((StargateBaseTileEntity) te).isMerged()) {
-                return (StargateBaseTileEntity) te;
+            if (!world.isBlockLoaded(linkedStargate)) {
+                return null;
             }
-            unlink();
+
+            IBlockState state = world.getBlockState(linkedStargate);
+            if (state.getBlock() instanceof StargateBaseBlock) {
+                TileEntity te = world.getTileEntity(linkedStargate);
+                if (te instanceof StargateBaseTileEntity && ((StargateBaseTileEntity) te).isMerged()) {
+                    return (StargateBaseTileEntity) te;
+                }
+                unlink();
+            } else {
+                unlink();
+            }
         }
+
         StargateBaseTileEntity gate = searchNearbyStargate(world);
-        if (gate != null) linkToStargate(gate, world);
+        if (gate != null) {
+            linkToStargate(gate, world);
+        }
         return gate;
     }
 
@@ -153,7 +171,6 @@ public class StargateControllerTileEntity extends TileEntity implements IInterac
 
     @Override
     public NBTTagCompound write(NBTTagCompound compound) {
-        super.write(compound);
         compound.putDouble("fuelLevel", fuelLevel);
         if (linkedStargate != null) {
             compound.putInt("connectedX", linkedStargate.getX());
@@ -163,7 +180,7 @@ public class StargateControllerTileEntity extends TileEntity implements IInterac
         }
         compound.put("inventory", inventory.serializeNBT());
         compound.putString("dialingBuffer", dialingBuffer);
-        return compound;
+        return super.write(compound);
     }
 
     @Override
