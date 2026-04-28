@@ -10,7 +10,6 @@ import net.minecraft.util.math.BlockPos;
 public class ComputerCraftInterfaceTileEntity extends TileEntity {
 
     private StargateAbstractAPI peripheralAdapter;
-    private CCTPeripheral peripheral;
 
     public ComputerCraftInterfaceTileEntity(TileEntityType<?> tileEntityType) {
         super(tileEntityType);
@@ -43,12 +42,20 @@ public class ComputerCraftInterfaceTileEntity extends TileEntity {
 
     @Override
     public void remove() {
+        if (world != null && !world.isRemote && peripheralAdapter != null) {
+            StargateBaseTileEntity base = findStargate();
+
+            if (base != null) {
+                base.removeComputerAdapter(peripheralAdapter);
+            }
+        }
+
         super.remove();
+
         if (peripheralAdapter != null) {
             peripheralAdapter = null;
         }
     }
-
     public void notifyComputerCraft() {
         if (world != null && !world.isRemote) {
             world.notifyNeighborsOfStateChange(pos, this.getBlockState().getBlock());

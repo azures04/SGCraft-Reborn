@@ -10,11 +10,11 @@ import net.minecraftforge.fml.network.simple.SimpleChannel;
 
 public class StargateNetwork {
 
-    private static final String PROTOCOL_VESION = "1";
+    private static final String PROTOCOL_VERSION = "1";
     private static final ResourceLocation networkId = new ResourceLocation(Constants.MOD_ID, "main");
     private static int packetId = 0;
 
-    public static final SimpleChannel INSTANCE = NetworkRegistry.newSimpleChannel(networkId, () -> PROTOCOL_VESION, PROTOCOL_VESION::equals, PROTOCOL_VESION::equals);
+    public static final SimpleChannel INSTANCE = NetworkRegistry.newSimpleChannel(networkId, () -> PROTOCOL_VERSION, PROTOCOL_VERSION::equals, PROTOCOL_VERSION::equals);
 
     public static void registerPackets() {
         INSTANCE.registerMessage(packetId++, StargateDialPacket.class, StargateDialPacket::encode, StargateDialPacket::decode, StargateDialPacket::handle);

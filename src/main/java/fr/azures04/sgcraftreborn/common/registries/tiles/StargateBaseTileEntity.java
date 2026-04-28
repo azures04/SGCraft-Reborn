@@ -1,5 +1,6 @@
 package fr.azures04.sgcraftreborn.common.registries.tiles;
 
+import fr.azures04.sgcraftreborn.SGCraftReborn;
 import fr.azures04.sgcraftreborn.common.Constants;
 import fr.azures04.sgcraftreborn.common.api.StargateAbstractAPI;
 import fr.azures04.sgcraftreborn.common.config.SGCraftRebornConfig;
@@ -47,17 +48,15 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
+import org.apache.logging.log4j.Level;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Random;
+import java.util.*;
 
 public class StargateBaseTileEntity extends TileEntity implements ITickable, IInteractionObject {
 
-    private transient List<StargateAbstractAPI> computerAdapters = new ArrayList<>();
+    private transient Set<StargateAbstractAPI> computerAdapters = Collections.newSetFromMap(new WeakHashMap<>());
 
     private static final float[][] CHEVRON_ANGLES = {
             { 45f, 45f, 40f },
@@ -330,7 +329,9 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
         }
 
         if (irisTimeout > 0 && --irisTimeout <= 0) {
-            irisState = (irisState == StargateIrisState.CLOSING) ? StargateIrisState.CLOSED : StargateIrisState.OPEN;
+            StargateIrisState newState = (irisState == StargateIrisState.CLOSING) ? StargateIrisState.CLOSED : StargateIrisState.OPEN;
+            fireComputerEvent("sgIrisStateChange", irisState, newState);
+            irisState = newState;
             sync();
         }
 
@@ -354,10 +355,13 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
                                 world.playSound(null, pos, ModSounds.SG_DIAL7, SoundCategory.BLOCKS, vol, 1.0F);
                             }
                         }
+                        String symbol = String.valueOf(this.dialledAddress.charAt(this.numEngagedChevrons - 1));
+                        fireComputerEvent("sgChevronEngaged", this.numEngagedChevrons, symbol);
                         this.sync();
                     }
 
                     if (this.timeout == TRANSIENT_DURATION) {
+                        fireComputerEvent("sgStargateStateChange", vortexState, StargateVortexState.OPENING);
                         vortexState = StargateVortexState.OPENING;
                         sync();
                     }
@@ -374,6 +378,7 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
                     }
                 } else {
                     numEngagedChevrons = dialledAddress != null ? dialledAddress.length() : 0;
+                    fireComputerEvent("sgStargateStateChange", vortexState, StargateVortexState.ACTIVE);
                     vortexState = StargateVortexState.ACTIVE;
                     int openTime = SGCraftRebornConfig.SECONDS_TO_STAY_OPEN.get();
                     timeout = openTime > 0 ? openTime * 20 : 999999;
@@ -397,10 +402,13 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
                     } else if (irisState == StargateIrisState.CLOSED) {
                         handleEntityVaporization();
                     }
-                } else disconnect();
+                } else {
+                    disconnect();
+                }
                 break;
 
             case CLOSING:
+                fireComputerEvent("sgStargateStateChange", vortexState, StargateVortexState.IDLE);
                 vortexState = StargateVortexState.IDLE;
                 updateControllerBlockState();
                 sync();
@@ -423,6 +431,7 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
 
         if (isInitiator) {
             remoteGate = getRemoteGate(targetAddress);
+            fireComputerEvent("sgDialOut", remoteGate);
             if (remoteGate == null || remoteGate.getVortexState() != StargateVortexState.IDLE) {
                 disconnect();
                 return;
@@ -435,8 +444,12 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
             int maxChevrons = hasChevronUpgrade ? 9 : 7;
             if (requiredChevrons > maxChevrons) requiredChevrons = maxChevrons;
             targetAddress = targetAddress.substring(0, requiredChevrons);
+        } else {
+            remoteGate = getRemoteGate(targetAddress);
+            fireComputerEvent("sgDialIn", remoteGate);
         }
 
+        fireComputerEvent("sgStargateStateChange", vortexState, StargateVortexState.DIALLING);
         vortexState = StargateVortexState.DIALLING;
         dialledAddress = targetAddress;
         connectedLoc = targetLocation;
@@ -466,6 +479,7 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
         world.playSound(null, pos, ModSounds.SG_OPEN, SoundCategory.BLOCKS, vol, 1.0F);
 
         String targetAddress = dialledAddress;
+        fireComputerEvent("sgStargateStateChange", vortexState, StargateVortexState.CLOSING);
         vortexState = StargateVortexState.CLOSING;
         connectedLoc = null;
         dialledAddress = "";
@@ -487,11 +501,13 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
     public void setIrisDeployed(boolean deploy) {
         float vol = SGCraftRebornConfig.SOUND_VOLUME.get().floatValue();
         if (deploy) {
+            fireComputerEvent("sgIrisStateChange", irisState, StargateIrisState.CLOSING);
             irisState = StargateIrisState.CLOSING;
             world.playSound(null, pos, ModSounds.IRIS_CLOSE, SoundCategory.BLOCKS, vol, 1.0F);
             irisTimeout = 60;
             sync();
         } else if (!deploy) {
+            fireComputerEvent("sgIrisStateChange", irisState, StargateIrisState.OPENING);
             irisState = StargateIrisState.OPENING;
             world.playSound(null, pos, ModSounds.IRIS_OPEN, SoundCategory.BLOCKS, vol, 1.0F);
             irisTimeout = 60;
@@ -1045,9 +1061,7 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
     }
 
     public void addComputerAdapter(StargateAbstractAPI adapter) {
-        if (!computerAdapters.contains(adapter)) {
-            computerAdapters.add(adapter);
-        }
+        computerAdapters.add(adapter);
     }
 
     public void removeComputerAdapter(StargateAbstractAPI adapter) {
@@ -1056,10 +1070,19 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
 
     public void fireComputerEvent(String eventName, Object... args) {
         for (StargateAbstractAPI adapter : computerAdapters) {
-            adapter.queueEvent(eventName, args);
+            if (adapter != null) {
+                adapter.queueEvent(eventName, args);
+            }
         }
     }
 
-
+    public void sendMessageAcrossVortex(Object... messageArgs) {
+        if (vortexState == StargateVortexState.ACTIVE && connectedLoc != null) {
+            StargateBaseTileEntity remoteGate = getRemoteGate(dialledAddress);
+            if (remoteGate != null) {
+                remoteGate.fireComputerEvent("sgMessageReceived", messageArgs);
+            }
+        }
+    }
 
 }

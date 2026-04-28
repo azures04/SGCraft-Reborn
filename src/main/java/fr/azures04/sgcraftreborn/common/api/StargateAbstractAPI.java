@@ -84,7 +84,7 @@ public abstract class StargateAbstractAPI {
     }
 
     public void sendMessage(Object... args) {
-        // stargate.sendMessageToRemote(args);
+        stargate.sendMessageAcrossVortex(args);
     }
 
     public abstract void queueEvent(String eventName, Object... args);
