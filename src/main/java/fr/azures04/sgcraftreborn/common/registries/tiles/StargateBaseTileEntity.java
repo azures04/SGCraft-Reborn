@@ -102,7 +102,6 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
 
     @Override
     public NBTTagCompound write(NBTTagCompound compound) {
-        ;
         compound.putBoolean("isMerged", isMerged);
         compound.putBoolean("isInitiator", isInitiator);
         compound.putString("dialledAddress", dialledAddress == null ? "" : dialledAddress);
@@ -695,11 +694,6 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
     }
 
     @Override
-    public void onChunkUnloaded() {
-        if (!world.isRemote) StargateWorldData.get(world).unregister(getAddress());
-    }
-
-    @Override
     public void remove() {
         if (world != null && !world.isRemote) {
             if (isMerged()) updateChunkLoading(false);
@@ -708,6 +702,7 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
                 TileEntity te = world.getTileEntity(controllerPos);
                 if (te instanceof StargateControllerTileEntity) ((StargateControllerTileEntity) te).unlink();
             }
+            StargateWorldData.get(world).unregister(getAddress());
         }
         super.remove();
     }
@@ -1064,5 +1059,7 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
             adapter.queueEvent(eventName, args);
         }
     }
+
+
 
 }
