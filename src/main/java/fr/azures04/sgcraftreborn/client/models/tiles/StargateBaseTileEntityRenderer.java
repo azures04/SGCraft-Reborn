@@ -17,6 +17,7 @@ import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.client.MinecraftForgeClient;
 import net.minecraftforge.items.CapabilityItemHandler;
 import org.lwjgl.opengl.GL13;
 
@@ -84,13 +85,14 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
 
     @Override
     public void render(StargateBaseTileEntity tileEntityIn, double x, double y, double z, float partialTicks, int destroyStage) {
-        if (!tileEntityIn.isMerged()) return;
-
         IBlockState state = tileEntityIn.getWorld().getBlockState(tileEntityIn.getPos());
 
-        if (!(state.getBlock() instanceof StargateBaseBlock)) {
+        if (!(state.getBlock() instanceof StargateBaseBlock) || !tileEntityIn.isMerged()) {
             return;
         }
+
+        // On récupère la passe actuelle (0 = Solide, 1 = Transparent)
+        int pass = net.minecraftforge.client.MinecraftForgeClient.getRenderPass();
 
         EnumFacing facing = state.get(StargateBaseBlock.FACING);
 
@@ -110,23 +112,28 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
         GlStateManager.enableRescaleNormal();
         GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F);
 
-        this.bindTexture(new ResourceLocation(Constants.MOD_ID, "textures/tileentity/stargate.png"));
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder buffer = tessellator.getBuffer();
 
-        renderRing(buffer, tessellator, ringMidRadius - ringOverlap, ringOuterRadius, RingType.Outer, ringZOffset);
-        renderInnerRing(tileEntityIn, buffer, tessellator, partialTicks);
-        renderChevrons(tileEntityIn, buffer, tessellator);
+        // 🧱 PASSE 0 : On dessine tout ce qui est SOLIDE
+        if (pass == 0 || pass == -1) {
+            this.bindTexture(new ResourceLocation(Constants.MOD_ID, "textures/tileentity/stargate.png"));
+            renderRing(buffer, tessellator, ringMidRadius - ringOverlap, ringOuterRadius, RingType.Outer, ringZOffset);
+            renderInnerRing(tileEntityIn, buffer, tessellator, partialTicks);
+            renderChevrons(tileEntityIn, buffer, tessellator);
 
-        if (tileEntityIn.hasIrisUpgrade()) {
-            renderIris(tileEntityIn, buffer, tessellator, partialTicks);
+            if (tileEntityIn.hasIrisUpgrade()) {
+                renderIris(tileEntityIn, buffer, tessellator, partialTicks);
+            }
+
+            renderCamouflage(tileEntityIn); // Le DHD et les blocs de camouflage
         }
 
-
-        renderCamouflage(tileEntityIn);
-
-        if (tileEntityIn.getVortexState() != StargateVortexState.IDLE && tileEntityIn.getVortexState() != StargateVortexState.DIALLING) {
-            renderEventHorizon(tileEntityIn, buffer, tessellator);
+        // 💧 PASSE 1 : On dessine uniquement le VORTEX
+        if (pass == 1 || pass == -1) {
+            if (tileEntityIn.getVortexState() != StargateVortexState.IDLE && tileEntityIn.getVortexState() != StargateVortexState.DIALLING) {
+                renderEventHorizon(tileEntityIn, buffer, tessellator);
+            }
         }
 
         GlStateManager.disableRescaleNormal();
@@ -212,7 +219,7 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
             RenderHelper.disableStandardItemLighting();
 
             GlStateManager.activeTexture(GL13.GL_TEXTURE1);
-            GlStateManager.disableTexture2D();
+            GlStateManager.enableTexture2D();
             GlStateManager.activeTexture(GL13.GL_TEXTURE0);
 
             GlStateManager.popMatrix();
@@ -331,10 +338,11 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
         GlStateManager.disableLighting();
 
 
-        boolean useTransparency = fr.azures04.sgcraftreborn.common.config.SGCraftRebornConfig.TRANSPARENCY.get();
+        boolean useTransparency = SGCraftRebornConfig.TRANSPARENCY.get();
         if (useTransparency) {
             GlStateManager.enableBlend();
             GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+            GlStateManager.depthMask(false);
         }
 
         double rclip = 2.5;
@@ -365,6 +373,7 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
         GlStateManager.depthMask(true);
         GlStateManager.enableLighting();
         if (useTransparency) {
+            GlStateManager.depthMask(true);
             GlStateManager.disableBlend();
         }
 

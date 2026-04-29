@@ -1,6 +1,5 @@
 package fr.azures04.sgcraftreborn.common.registries.tiles;
 
-import fr.azures04.sgcraftreborn.SGCraftReborn;
 import fr.azures04.sgcraftreborn.common.Constants;
 import fr.azures04.sgcraftreborn.common.api.StargateAbstractAPI;
 import fr.azures04.sgcraftreborn.common.config.SGCraftRebornConfig;
@@ -48,7 +47,6 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
-import org.apache.logging.log4j.Level;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -157,6 +155,11 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
             inventory.deserializeNBT(compound.getCompound("inventory"));
         }
         distanceFactor = compound.contains("distanceFactor", 6) ? compound.getDouble("distanceFactor") : 1.0;
+    }
+
+    @Override
+    public boolean shouldRenderInPass(int pass) {
+        return pass == 0 || pass == 1;
     }
 
     public double getEnergyToOpen() {
@@ -438,7 +441,9 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
             }
 
             if (world.getDimension().getType().getId() == remoteGate.getWorld().getDimension().getType().getId() && requiredChevrons > 7) {
-                requiredChevrons = 7;
+                if (requiredChevrons != 9) {
+                    requiredChevrons = 7;
+                }
             }
 
             int maxChevrons = hasChevronUpgrade ? 9 : 7;
@@ -500,6 +505,9 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
 
     public void setIrisDeployed(boolean deploy) {
         float vol = SGCraftRebornConfig.SOUND_VOLUME.get().floatValue();
+        if (!deploy && irisState == StargateIrisState.OPEN || deploy && irisState == StargateIrisState.CLOSED) {
+            return;
+        }
         if (deploy) {
             fireComputerEvent("sgIrisStateChange", irisState, StargateIrisState.CLOSING);
             irisState = StargateIrisState.CLOSING;

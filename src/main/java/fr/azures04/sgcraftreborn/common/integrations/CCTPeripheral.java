@@ -15,6 +15,7 @@ import java.util.List;
 public class CCTPeripheral extends StargateAbstractAPI implements IPeripheral {
 
     private final List<IComputerAccess> connectedComputers = new ArrayList<>();
+
     private final String[] METHOD_NAMES = new String[] {
         "stargateState",
         "energyAvailable",
