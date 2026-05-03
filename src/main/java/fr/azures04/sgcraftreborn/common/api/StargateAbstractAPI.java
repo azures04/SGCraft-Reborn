@@ -28,24 +28,27 @@ public abstract class StargateAbstractAPI {
 
     public Object[] getEnergyAvailable() {
         return new Object[] {
-            stargate.getEnergyInBuffer()
+            stargate.getAvailableEnergy()
         };
     }
 
     public Object[] getEnergyToDial(String address) {
-        StargateBaseTileEntity remoteGate = stargate.getRemoteGate(address);
+        String cleanAddress = address.replace("-", "");
+
+        StargateBaseTileEntity remoteGate = stargate.getRemoteGate(cleanAddress);
 
         if (remoteGate != null) {
             double distanceFactor = StargateBaseTileEntity.distanceFactorForCoordDifference(stargate, remoteGate);
             double energySGU = stargate.getEnergyToOpen() * distanceFactor;
-            double energyFE = energySGU * 80.0;
 
             return new Object[] {
-                energyFE
+                energySGU
             };
         }
+
         return new Object[] {
-            0.0
+            -1.0,
+            "Gate not found or offline"
         };
     }
 
@@ -62,7 +65,15 @@ public abstract class StargateAbstractAPI {
     }
 
     public void dial(String address) {
-        stargate.startDialing(address, null, true, 1.0);
+        String cleanAddress = address.replace("-", "");
+        double distFactor = 1.0;
+
+        StargateBaseTileEntity remoteGate = stargate.getRemoteGate(cleanAddress);
+        if (remoteGate != null) {
+            distFactor = StargateBaseTileEntity.distanceFactorForCoordDifference(stargate, remoteGate);
+        }
+
+        stargate.startDialing(cleanAddress, null, true, distFactor);
     }
 
     public void disconnect() {

@@ -1,7 +1,6 @@
 package fr.azures04.sgcraftreborn.common.registries.blocks;
 
 import fr.azures04.sgcraftreborn.client.models.ISpecialItemRenderer;
-import fr.azures04.sgcraftreborn.client.models.tiles.items.StargateControllerISTER;
 import fr.azures04.sgcraftreborn.client.screens.StargateControllerScreen;
 import fr.azures04.sgcraftreborn.common.registries.blocks.states.StargateControllerStatus;
 import fr.azures04.sgcraftreborn.common.registries.tiles.StargateBaseTileEntity;
@@ -38,6 +37,8 @@ import net.minecraft.world.IBlockReader;
 import net.minecraft.world.IInteractionObject;
 import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.network.NetworkHooks;
 import net.minecraftforge.items.CapabilityItemHandler;
 
@@ -89,12 +90,13 @@ public class StargateControllerBlock extends Block implements ISpecialItemRender
         return (IBlockState)((IBlockState)((IBlockState) this.getDefaultState().with(FACING, context.getPlacementHorizontalFacing())).with(STATUS, StargateControllerStatus.UNLINKED)).with(WATERLOGGED, false);
     }
 
-    public Callable < TileEntityItemStackRenderer > getISTER() {
-        return StargateControllerISTER::new;
+    public Callable <TileEntityItemStackRenderer> getISTER() {
+        return fr.azures04.sgcraftreborn.client.models.tiles.items.StargateControllerISTER::new;
     }
 
     public boolean onBlockActivated(IBlockState state, World worldIn, BlockPos pos, EntityPlayer player, EnumHand hand, EnumFacing side, float hitX, float hitY, float hitZ) {
         if (worldIn.isRemote && side == EnumFacing.UP) {
+
             StargateControllerTileEntity controller = (StargateControllerTileEntity) worldIn.getTileEntity(pos);
             if (controller == null || !controller.isLinked()) return true;
 
@@ -102,10 +104,14 @@ public class StargateControllerBlock extends Block implements ISpecialItemRender
             if (linkedPos == null) return true;
 
             TileEntity baseTe = worldIn.getTileEntity(linkedPos);
-            boolean hasChevron = (baseTe instanceof StargateBaseTileEntity)
-                    && ((StargateBaseTileEntity) baseTe).hasChevronUpgrade();
+            boolean hasChevron = (baseTe instanceof StargateBaseTileEntity) && ((StargateBaseTileEntity) baseTe).hasChevronUpgrade();
 
-            Minecraft.getInstance().displayGuiScreen(new StargateControllerScreen(new ExtendedPos(pos, worldIn.dimension.getType().getId()), (StargateControllerStatus) state.get(STATUS), hasChevron));
+            DistExecutor.runWhenOn(Dist.CLIENT, () -> () -> {
+                ExtendedPos exPos = new ExtendedPos(pos, worldIn.dimension.getType().getId());
+                StargateControllerStatus status = (StargateControllerStatus) state.get(STATUS);
+
+                fr.azures04.sgcraftreborn.client.registries.ModScreens.openScreen("controller_main", exPos, status, hasChevron);
+            });
             return true;
         } else {
             if (!worldIn.isRemote) {

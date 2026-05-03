@@ -1,5 +1,7 @@
 package fr.azures04.sgcraftreborn.common.world;
 
+import net.minecraft.util.text.TextComponentTranslation;
+
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -40,20 +42,17 @@ public class StargateAddressing {
         return address;
     }
 
-    public static class StargateAddressingException extends RuntimeException {
-        public static final StargateAddressingException INVALID_ADDRESS = new StargateAddressingException("Invalid address");
-        public static final StargateAddressingException GATE_NOT_FOUND = new StargateAddressingException("No stargate at this address");
-        public static final StargateAddressingException GATE_BUSY = new StargateAddressingException("Stargate is busy");
-        public static final StargateAddressingException NOT_LINKED = new StargateAddressingException("Stargate not linked");
-        public static final StargateAddressingException NOT_MERGED = new StargateAddressingException("Stargate not merged");
-        public static final StargateAddressingException NOT_AT_THIS_ADDRESS = new StargateAddressingException("No stargate at this address");
-        public static final StargateAddressingException MISSING_IRIS_UPGRADE = new StargateAddressingException("You need an iris upgrade to do that.");
-        public static final StargateAddressingException MISSING_CHEVRON_UPGRADE = new StargateAddressingException("You need an chevron upgrade to do that.");
-        public static final StargateAddressingException CANT_DIAL_SAME_GATE = new StargateAddressingException("A gate cannot call itfself.");
-
-        public StargateAddressingException(String message) {
-            super(message);
-        }
+    public static class StargateAddressingException {
+        public static final String INVALID_ADDRESS = "stargate.error.invalid_address";
+        public static final String GATE_NOT_FOUND = "stargate.error.gate_not_found";
+        public static final String GATE_BUSY = "stargate.error.gate_busy";
+        public static final String NOT_LINKED = "stargate.error.not_linked";
+        public static final String NOT_MERGED = "stargate.error.not_merged";
+        public static final String NOT_AT_THIS_ADDRESS = "stargate.error.not_at_this_address";
+        public static final String MISSING_IRIS_UPGRADE = "stargate.error.missing_iris_upgrade";
+        public static final String MISSING_CHEVRON_UPGRADE = "stargate.error.missing_chevron_upgrade";
+        public static final String CANT_DIAL_SAME_GATE = "stargate.error.cant_dial_same_gate";
+        public static final String INSUFFICIENT_POWER = "stargate.error.insufficient_power";
     }
 
 }

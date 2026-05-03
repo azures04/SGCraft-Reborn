@@ -15,5 +15,17 @@
     "item.sgcraftreborn.naquadah": "Naquadah",
     "item.sgcraftreborn.stargate_core_crystal": "Cristal de cœur de la Porte des Étoiles",
     "item.sgcraftreborn.stargate_controller_crystal": "Cristal de contrôle de la Porte des Étoiles",
-    "container.sgcraftreborn.power": "Unité d'alimentation (RF)"
+    "container.sgcraftreborn.power": "Unité d'alimentation (RF)",
+    "container.sgcraftreborn.dhd": "Carburant du DHD",
+    "stargate.error.invalid_address": "Adresse invalide.",
+    "stargate.error.gate_not_found": "Porte introuvable.",
+    "stargate.error.gate_busy": "La porte distante est déjà occupée.",
+    "stargate.error.not_linked": "Porte non reliée.",
+    "stargate.error.not_merged": "Structure de la porte incomplète.",
+    "stargate.error.not_at_this_address": "Aucune porte à cette adresse.",
+    "stargate.error.missing_iris_upgrade": "Vous avez besoin d'une amélioration d'iris pour faire ça.",
+    "stargate.error.missing_chevron_upgrade": "Vous avez besoin d'une amélioration de chevrons pour faire ça.",
+    "stargate.error.cant_dial_same_gate": "Une porte ne peut pas s'appeller elle même.",
+    "stargate.error.insufficient_power": "Niveau d'énegie insuffisent.",
+    "stargate.vortex.irisclosed": "Iris fermé!"
 }

@@ -100,12 +100,12 @@ public class StargateControllerTileEntity extends TileEntity implements IInterac
         return null;
     }
 
-    private void linkToStargate(StargateBaseTileEntity gate, World world) {
+    private boolean linkToStargate(StargateBaseTileEntity gate, World world) {
         ExtendedPos thisExtendedPos = new ExtendedPos(this.pos, world.getDimension().getType().getId());
         if (gate.getControllerPos() != null && !gate.getControllerPos().equals(thisExtendedPos)) {
             TileEntity existing = world.getTileEntity(gate.getControllerPos());
             if (existing instanceof StargateControllerTileEntity) {
-                return;
+                return false;
             }
         }
 
@@ -117,29 +117,27 @@ public class StargateControllerTileEntity extends TileEntity implements IInterac
             world.setBlockState(pos, state.with(StargateControllerBlock.STATUS, StargateControllerStatus.LINKED), 3);
         }
         sync();
+        return true;
     }
 
     public StargateBaseTileEntity getLinkedStargateTE(World world) {
         if (linkedStargate != null) {
-            if (!world.isBlockLoaded(linkedStargate)) {
-                return null;
-            }
-
+            if (!world.isBlockLoaded(linkedStargate)) return null;
             IBlockState state = world.getBlockState(linkedStargate);
             if (state.getBlock() instanceof StargateBaseBlock) {
                 TileEntity te = world.getTileEntity(linkedStargate);
                 if (te instanceof StargateBaseTileEntity && ((StargateBaseTileEntity) te).isMerged()) {
                     return (StargateBaseTileEntity) te;
                 }
-                unlink();
-            } else {
-                unlink();
             }
+            unlink();
         }
 
         StargateBaseTileEntity gate = searchNearbyStargate(world);
         if (gate != null) {
-            linkToStargate(gate, world);
+            if (!linkToStargate(gate, world)) {
+                return null;
+            }
         }
         return gate;
     }
@@ -192,58 +190,58 @@ public class StargateControllerTileEntity extends TileEntity implements IInterac
 
     public String dial(String address) {
         if (!StargateAddressing.isValidAddress(address)) {
-            throw StargateAddressing.StargateAddressingException.INVALID_ADDRESS;
+            return StargateAddressing.StargateAddressingException.INVALID_ADDRESS;
         }
 
         StargateBaseTileEntity localGate = getLinkedStargateTE(world);
         if (localGate == null) {
-            throw StargateAddressing.StargateAddressingException.NOT_LINKED;
+            return StargateAddressing.StargateAddressingException.NOT_LINKED;
         }
         if (!localGate.isMerged()) {
-            throw StargateAddressing.StargateAddressingException.NOT_MERGED;
+            return StargateAddressing.StargateAddressingException.NOT_MERGED;
         }
 
         ExtendedPos remotePos = StargateWorldData.get(world).findStargate(address);
 
         if (address.length() == 9) {
             if (!localGate.hasChevronUpgrade()) {
-                throw StargateAddressing.StargateAddressingException.MISSING_CHEVRON_UPGRADE;
+                return StargateAddressing.StargateAddressingException.MISSING_CHEVRON_UPGRADE;
             }
             remotePos = StargateWorldData.findStargateUniversally(Objects.requireNonNull(world.getServer()), address);
         }
 
         if (remotePos == null) {
-            throw StargateAddressing.StargateAddressingException.NOT_AT_THIS_ADDRESS;
+            return StargateAddressing.StargateAddressingException.NOT_AT_THIS_ADDRESS;
         }
 
         MinecraftServer server = world.getServer();
         WorldServer remoteWorld = server.getWorld(DimensionType.getById(remotePos.getDimension()));
         TileEntity remoteTe = remoteWorld.getTileEntity(remotePos.getPos());
         if (!(remoteTe instanceof StargateBaseTileEntity)) {
-            throw StargateAddressing.StargateAddressingException.GATE_NOT_FOUND;
+            return StargateAddressing.StargateAddressingException.GATE_NOT_FOUND;
         }
 
         StargateBaseTileEntity remoteGate = (StargateBaseTileEntity) remoteTe;
         if (!remoteGate.isMerged()) {
-            throw StargateAddressing.StargateAddressingException.NOT_MERGED;
+            return StargateAddressing.StargateAddressingException.NOT_MERGED;
         }
 
         if (localGate.getVortexState() != StargateVortexState.IDLE) {
-            throw StargateAddressing.StargateAddressingException.GATE_BUSY;
+            return StargateAddressing.StargateAddressingException.GATE_BUSY;
         }
         if (remoteGate.getVortexState() != StargateVortexState.IDLE) {
-            throw StargateAddressing.StargateAddressingException.GATE_BUSY;
+            return StargateAddressing.StargateAddressingException.GATE_BUSY;
         }
 
         if (address.length() == 9 && !remoteGate.hasChevronUpgrade()) {
-            throw StargateAddressing.StargateAddressingException.MISSING_CHEVRON_UPGRADE;
+            return StargateAddressing.StargateAddressingException.MISSING_CHEVRON_UPGRADE;
         }
 
         double distanceFactor = StargateBaseTileEntity.distanceFactorForCoordDifference(localGate, remoteGate);
         double energyRequired = localGate.getEnergyToOpen() * distanceFactor;
 
         if (!localGate.energyIsAvailable(energyRequired)) {
-            return "stargate.error.insufficient_power";
+            return StargateAddressing.StargateAddressingException.INSUFFICIENT_POWER;
         }
 
         setDialingBuffer("");

@@ -183,9 +183,7 @@ public class StargateBaseBlock extends Block implements ILiquidContainer, IBucke
         boolean isPowered = worldIn.isBlockPowered(pos);
         StargateBaseTileEntity base = (StargateBaseTileEntity) worldIn.getTileEntity(pos);
         if (base != null) {
-            if (base.hasIrisUpgrade()) {
-                base.setIrisDeployed(isPowered);
-            }
+            base.setIrisDeployed(isPowered);
         }
         super.neighborChanged(state, worldIn, pos, blockIn, fromPos);
     }
@@ -235,23 +233,20 @@ public class StargateBaseBlock extends Block implements ILiquidContainer, IBucke
         return Fluids.EMPTY;
     }
 
-
     @Override
-    public void onExplosionDestroy(World worldIn, BlockPos pos, Explosion explosionIn) {
-        if (!worldIn.isRemote) {
-            StargateBaseTileEntity base = (StargateBaseTileEntity) worldIn.getTileEntity(pos);
+    public void onBlockExploded(IBlockState state, World world, BlockPos pos, Explosion explosion) {
+        if (!world.isRemote) {
+            StargateBaseTileEntity base = (StargateBaseTileEntity) world.getTileEntity(pos);
+
             if (base != null && base.getVortexState() != StargateVortexState.IDLE) {
                 int radius = SGCraftRebornConfig.EXPLOSION_RADIUS.get();
                 if (radius > 0) {
                     boolean causesFire = SGCraftRebornConfig.EXPLOSION_FLAME.get();
-                    worldIn.createExplosion(null, pos.getX() + 0.5, pos.getY() + 2.5, pos.getZ() + 0.5, (float)radius, causesFire);
+                    world.createExplosion(null, pos.getX() + 0.5, pos.getY() + 2.5, pos.getZ() + 0.5, (float)radius, causesFire);
                 }
             }
         }
-    }
 
-    @Override
-    public void onBlockExploded(IBlockState state, World world, BlockPos pos, Explosion explosion) {
         super.onBlockExploded(state, world, pos, explosion);
     }
 }

@@ -15,5 +15,17 @@
     "item.sgcraftreborn.naquadah": "Naquadah",
     "item.sgcraftreborn.stargate_core_crystal": "Stargate Core Crystal",
     "item.sgcraftreborn.stargate_controller_crystal": "Stargate Controller Crystal",
-    "container.sgcraftreborn.power": "RF Power Unit"
+    "container.sgcraftreborn.power": "RF Power Unit",
+    "container.sgcraftreborn.dhd": "DHD Fuel",
+    "stargate.error.invalid_address": "Invalid address.",
+    "stargate.error.gate_not_found": "No stargate at this address.",
+    "stargate.error.gate_busy": "Stargate is busy.",
+    "stargate.error.not_linked": "Stargate not linke.d",
+    "stargate.error.not_merged": "Stargate not merged.",
+    "stargate.error.not_at_this_address": "No stargate at this address.",
+    "stargate.error.missing_iris_upgrade": "You need an iris upgrade to do that.",
+    "stargate.error.missing_chevron_upgrade": "You need an chevron upgrade to do that.",
+    "stargate.error.cant_dial_same_gate": "A gate cannot call itfself.",
+    "stargate.error.insufficient_power": "Insufficient energy to dial.",
+    "stargate.vortex.irisclosed": "Iris closed!"
 }

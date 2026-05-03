@@ -39,6 +39,7 @@ import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextComponentTranslation;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.IInteractionObject;
 import net.minecraft.world.WorldServer;
 import net.minecraft.world.dimension.DimensionType;
@@ -47,20 +48,21 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class StargateBaseTileEntity extends TileEntity implements ITickable, IInteractionObject {
 
-    private transient Set<StargateAbstractAPI> computerAdapters = Collections.newSetFromMap(new WeakHashMap<>());
+    private transient Set<StargateAbstractAPI> computerAdapters = ConcurrentHashMap.newKeySet();
 
     private static final float[][] CHEVRON_ANGLES = {
             { 45f, 45f, 40f },
             { 36f, 33f, 30f }
     };
 
+    static final float vol = SGCraftRebornConfig.SOUND_VOLUME.get().floatValue();
     static final int DIALLING_TIME = 40;
     static final int INTER_DIALLING_TIME = 10;
     static final int TRANSIENT_DURATION = 20;
@@ -201,6 +203,23 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
         }
 
         return available >= amount;
+    }
+
+    public double getAvailableEnergy() {
+        double available = energyInBuffer;
+
+        if (controllerPos != null && world != null) {
+            TileEntity te = world.getTileEntity(controllerPos);
+            if (te instanceof StargateControllerTileEntity) {
+                available += ((StargateControllerTileEntity) te).getAvailableEnergy();
+            }
+        }
+
+        for (RFPowerUnitTileEntity powerUnit : getPowerUnits()) {
+            available += powerUnit.getAvailableSGEnergy();
+        }
+
+        return available;
     }
 
     public boolean useEnergy(double amount) {
@@ -383,8 +402,9 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
                     numEngagedChevrons = dialledAddress != null ? dialledAddress.length() : 0;
                     fireComputerEvent("sgStargateStateChange", vortexState, StargateVortexState.ACTIVE);
                     vortexState = StargateVortexState.ACTIVE;
+                    world.playSound(null, pos, ModSounds.SG_OPEN, SoundCategory.BLOCKS, vol, 1.0F);
                     int openTime = SGCraftRebornConfig.SECONDS_TO_STAY_OPEN.get();
-                    timeout = openTime > 0 ? openTime * 20 : 999999;
+                    timeout = (openTime > 0) ? openTime * 20 : Integer.MAX_VALUE;
                     updateControllerBlockState();
                     sync();
                 }
@@ -422,7 +442,6 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
     }
 
     public void startDialing(String targetAddress, ExtendedPos targetLocation, boolean isInitiator, double distFactor) {
-        float vol = SGCraftRebornConfig.SOUND_VOLUME.get().floatValue();
         if (targetAddress == null || targetAddress.isEmpty() || getAddress().startsWith(targetAddress)) {
             world.playSound(null, pos, ModSounds.SG_ABORT, SoundCategory.BLOCKS, vol, 1.0F);
             disconnect();
@@ -434,6 +453,9 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
 
         if (isInitiator) {
             remoteGate = getRemoteGate(targetAddress);
+            if (targetLocation == null) {
+                targetLocation = remoteGate.getExtendedPos();
+            }
             fireComputerEvent("sgDialOut", remoteGate);
             if (remoteGate == null || remoteGate.getVortexState() != StargateVortexState.IDLE) {
                 disconnect();
@@ -451,6 +473,9 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
             targetAddress = targetAddress.substring(0, requiredChevrons);
         } else {
             remoteGate = getRemoteGate(targetAddress);
+            if (targetLocation == null) {
+                targetLocation = remoteGate.getExtendedPos();
+            }
             fireComputerEvent("sgDialIn", remoteGate);
         }
 
@@ -466,11 +491,11 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
         updateControllerBlockState();
         sync();
 
-        world.playSound(null, pos, ModSounds.SG_OPEN, SoundCategory.BLOCKS, vol, 1.0F);
-
-        if (isInitiator && remoteGate != null) {
+        if (isInitiator) {
             String senderAddress = getAddress();
-            if (senderAddress.length() > requiredChevrons) senderAddress = senderAddress.substring(0, requiredChevrons);
+            if (senderAddress.length() > requiredChevrons) {
+                senderAddress = senderAddress.substring(0, requiredChevrons);
+            }
             remoteGate.startDialing(senderAddress, getExtendedPos(), false, distFactor);
         }
     }
@@ -504,8 +529,7 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
     }
 
     public void setIrisDeployed(boolean deploy) {
-        float vol = SGCraftRebornConfig.SOUND_VOLUME.get().floatValue();
-        if (!deploy && irisState == StargateIrisState.OPEN || deploy && irisState == StargateIrisState.CLOSED) {
+        if (!hasIrisUpgrade() || !deploy && irisState == StargateIrisState.OPEN || deploy && irisState == StargateIrisState.CLOSED) {
             return;
         }
         if (deploy) {
@@ -555,8 +579,12 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
         for (Entity entity : world.getEntitiesWithinAABB(Entity.class, eventHorizonBox)) {
             if (entity instanceof EntityPlayerMP) {
                 EntityPlayerMP player = (EntityPlayerMP) entity;
-                if (player.isCreative()) player.sendMessage(new TextComponentString("Iris closed!"));
-                if (!SGCraftRebornConfig.PRESERVE_INVENTORY.get()) player.inventory.clear();
+                if (player.isCreative()) {
+                    player.sendStatusMessage(new TextComponentString(TextFormatting.RED + new TextComponentTranslation("stargate.vortex.irisclosed").getString()), true);
+                }
+                if (!SGCraftRebornConfig.PRESERVE_INVENTORY.get()) {
+                    player.inventory.clear();
+                }
             }
             world.playSound(null, pos, ModSounds.IRIS_HIT, SoundCategory.BLOCKS, vol, 1.0F);
             entity.attackEntityFrom(DamageSource.FLY_INTO_WALL, Float.MAX_VALUE);
@@ -609,7 +637,20 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
         final double fX = destX, fY = destY, fZ = destZ;
         final float fYaw = targetYaw, fPitch = entity.rotationPitch;
 
+        float yawDiff = targetYaw - entity.rotationYaw;
+        double rad = Math.toRadians(yawDiff);
+        double cos = Math.cos(rad);
+        double sin = Math.sin(rad);
+
+        final double newMotionX = entity.motionX * cos - entity.motionZ * sin;
+        final double newMotionZ = entity.motionX * sin + entity.motionZ * cos;
+        final double newMotionY = entity.motionY;
+
         server.addScheduledTask(() -> {
+            entity.motionX = newMotionX;
+            entity.motionY = newMotionY;
+            entity.motionZ = newMotionZ;
+            entity.velocityChanged = true;
             if (entity instanceof EntityPlayerMP) {
                 EntityPlayerMP player = (EntityPlayerMP) entity;
                 if (isCrossDimension) player.changeDimension(dimType, new StargateTeleporter(fX, fY, fZ, fYaw, fPitch));
@@ -666,30 +707,10 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
     private void notifyNearbyComputers() {
         if (world == null || world.isRemote) return;
 
-        EnumFacing.Axis axis = world.getBlockState(pos).get(StargateBaseBlock.FACING).getAxis();
+        BlockPos minPos = pos.add(-3, 0, -3);
+        BlockPos maxPos = pos.add(3, 1, 3);
 
-        BlockPos min1, max1, min2, max2;
-
-        if (axis == EnumFacing.Axis.Z) {
-            min1 = pos.add(-3, 0, -1);
-            max1 = pos.add(3, 0, 1);
-            min2 = pos.add(-2, -1, 0);
-            max2 = pos.add(2, -1, 0);
-        } else {
-            min1 = pos.add(-1, 0, -3);
-            max1 = pos.add(1, 0, 3);
-            min2 = pos.add(0, -1, -2);
-            max2 = pos.add(0, -1, 2);
-        }
-
-        for (BlockPos scanPos : BlockPos.getAllInBoxMutable(min1, max1)) {
-            TileEntity te = world.getTileEntity(scanPos);
-            if (te instanceof ComputerCraftInterfaceTileEntity) {
-                ((ComputerCraftInterfaceTileEntity) te).notifyComputerCraft();
-            }
-        }
-
-        for (BlockPos scanPos : BlockPos.getAllInBoxMutable(min2, max2)) {
+        for (BlockPos scanPos : BlockPos.getAllInBoxMutable(minPos, maxPos)) {
             TileEntity te = world.getTileEntity(scanPos);
             if (te instanceof ComputerCraftInterfaceTileEntity) {
                 ((ComputerCraftInterfaceTileEntity) te).notifyComputerCraft();
