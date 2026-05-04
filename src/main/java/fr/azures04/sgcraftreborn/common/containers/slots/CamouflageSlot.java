@@ -1,6 +1,6 @@
 package fr.azures04.sgcraftreborn.common.containers.slots;
 
-import net.minecraft.item.ItemBlock;
+import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.SlotItemHandler;
@@ -15,7 +15,7 @@ public class CamouflageSlot extends SlotItemHandler {
 
     @Override
     public boolean isItemValid(@Nonnull ItemStack stack) {
-        return stack.getItem() instanceof ItemBlock;
+        return stack.getItem() instanceof BlockItem;
     }
 
     @Override

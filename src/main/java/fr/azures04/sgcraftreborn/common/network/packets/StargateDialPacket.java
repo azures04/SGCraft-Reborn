@@ -3,14 +3,13 @@ package fr.azures04.sgcraftreborn.common.network.packets;
 import fr.azures04.sgcraftreborn.SGCraftReborn;
 import fr.azures04.sgcraftreborn.common.registries.tiles.StargateControllerTileEntity;
 import fr.azures04.sgcraftreborn.common.util.math.ExtendedPos;
-import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.TextComponentString;
-import net.minecraft.util.text.TextComponentTranslation;
+import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
-import net.minecraft.world.BossInfo;
+import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.network.NetworkEvent;
 import org.apache.logging.log4j.Level;
@@ -47,7 +46,7 @@ public class StargateDialPacket {
 
     public static void handle(StargateDialPacket msg, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            EntityPlayerMP sender = ctx.get().getSender();
+            ServerPlayerEntity sender = ctx.get().getSender();
             if (sender == null) return;
 
             World world = sender.world;
@@ -75,7 +74,7 @@ public class StargateDialPacket {
                 try {
                     String result = dhd.dial(msg.address);
                     if (result != null) {
-                        ctx.get().getSender().sendStatusMessage(new TextComponentString(TextFormatting.RED + new TextComponentTranslation(result).getString()), true);
+                        ctx.get().getSender().sendStatusMessage(new StringTextComponent(TextFormatting.RED + new TranslationTextComponent(result).getString()), true);
                     }
                 } catch (RuntimeException e) {
                     SGCraftReborn.LOGGER.log(Level.ERROR, e.toString());

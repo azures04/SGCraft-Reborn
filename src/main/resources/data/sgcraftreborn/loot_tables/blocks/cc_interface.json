@@ -1,0 +1,20 @@
+{
+    "forge:condition": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "computercraft"
+        }
+    ],
+    "type": "minecraft:block",
+    "pools": [
+        {
+            "rolls": 1,
+            "entries": [
+                {
+                    "type": "minecraft:item",
+                    "name": "sgcraftreborn:cc_interface"
+                }
+            ]
+        }
+    ]
+}

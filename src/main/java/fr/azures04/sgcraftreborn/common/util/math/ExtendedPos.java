@@ -1,6 +1,5 @@
 package fr.azures04.sgcraftreborn.common.util.math;
 
-import jdk.nashorn.internal.ir.Block;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;

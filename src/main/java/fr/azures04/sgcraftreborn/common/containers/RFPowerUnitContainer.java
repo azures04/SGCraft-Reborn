@@ -1,45 +1,35 @@
 package fr.azures04.sgcraftreborn.common.containers;
 
+import fr.azures04.sgcraftreborn.common.registries.ModContainers;
 import fr.azures04.sgcraftreborn.common.registries.tiles.RFPowerUnitTileEntity;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.InventoryPlayer;
-import net.minecraft.inventory.Container;
-import net.minecraft.inventory.IContainerListener;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.inventory.container.Container;
+import net.minecraft.util.IntReferenceHolder;
 import net.minecraft.util.math.BlockPos;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class RFPowerUnitContainer extends Container {
 
     private final RFPowerUnitTileEntity powerUnit;
-    private int lastEnergyScaled = -1;
     private int clientEnergyScaled = 0;
 
-    public RFPowerUnitContainer(InventoryPlayer playerInv, BlockPos pos) {
-        super();
+    public RFPowerUnitContainer(int windowId, PlayerInventory playerInv, BlockPos pos) {
+        super(ModContainers.RF_POWER_UNIT, windowId);
         this.powerUnit = (RFPowerUnitTileEntity) playerInv.player.world.getTileEntity(pos);
-    }
 
-    @Override
-    public void detectAndSendChanges() {
-        super.detectAndSendChanges();
-
-        double max = 4000000.0;
-        double current = powerUnit.getStoredForgeEnergy();
-        int currentEnergyScaled = (int) ((current / max) * 10000);
-
-        for (IContainerListener listener : this.listeners) {
-            if (this.lastEnergyScaled != currentEnergyScaled) {
-                listener.sendWindowProperty(this, 0, currentEnergyScaled);
+        this.trackInt(new IntReferenceHolder() {
+            @Override
+            public int get() {
+                double max = 4000000.0;
+                double current = powerUnit.getStoredForgeEnergy();
+                return (int) ((current / max) * 10000);
             }
-        }
-        this.lastEnergyScaled = currentEnergyScaled;
-    }
 
-    @Override
-    @OnlyIn(Dist.CLIENT)
-    public void updateProgressBar(int id, int data) {
-        if (id == 0) this.clientEnergyScaled = data;
+            @Override
+            public void set(int value) {
+                clientEnergyScaled = value;
+            }
+        });
     }
 
     public double getEnergyScaled() {
@@ -47,7 +37,11 @@ public class RFPowerUnitContainer extends Container {
     }
 
     @Override
-    public boolean canInteractWith(EntityPlayer playerIn) {
-        return playerIn.getDistanceSq(powerUnit.getPos()) <= 64.0D;
+    public boolean canInteractWith(PlayerEntity playerIn) {
+        return playerIn.getDistanceSq(
+                powerUnit.getPos().getX() + 0.5D,
+                powerUnit.getPos().getY() + 0.5D,
+                powerUnit.getPos().getZ() + 0.5D
+        ) <= 64.0D;
     }
 }

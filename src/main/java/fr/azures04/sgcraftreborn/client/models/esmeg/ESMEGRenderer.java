@@ -1,11 +1,11 @@
 package fr.azures04.sgcraftreborn.client.models.esmeg;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 import org.lwjgl.opengl.GL11;
 
 import java.util.HashMap;
@@ -41,18 +41,19 @@ public class ESMEGRenderer {
         }
     }
 
-    public static void renderWithRotation(ESMEGModel model, double x, double y, double z, EnumFacing facing) {
+    public static void renderWithRotation(ESMEGModel model, double x, double y, double z, Direction facing) {
         renderWithRotation(model, x, y, z, facing, new HashMap<>());
     }
 
-    public static void renderWithRotation(ESMEGModel model, double x, double y, double z, EnumFacing facing, Map<String, String> state) {
+    public static void renderWithRotation(ESMEGModel model, double x, double y, double z, Direction facing, Map<String, String> state) {
         GlStateManager.pushMatrix();
         GlStateManager.translated(x + 0.5, y + 0.5, z + 0.5);
         GlStateManager.rotatef(getAngleFromFacing(facing), 0, 1, 0);
         render(model, -0.5, -0.5, -0.5, state);
         GlStateManager.popMatrix();
     }
-    private static float getAngleFromFacing(EnumFacing facing) {
+
+    private static float getAngleFromFacing(Direction facing) {
         switch (facing) {
             case NORTH:
                 return 0f;

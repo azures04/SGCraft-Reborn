@@ -1,7 +1,5 @@
 package fr.azures04.sgcraftreborn.common.world;
 
-import net.minecraft.util.text.TextComponentTranslation;
-
 import java.util.UUID;
 import java.util.regex.Pattern;
 

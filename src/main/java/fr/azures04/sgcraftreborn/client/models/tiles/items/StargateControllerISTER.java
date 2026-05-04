@@ -4,12 +4,12 @@ import fr.azures04.sgcraftreborn.common.Constants;
 import fr.azures04.sgcraftreborn.client.models.esmeg.ESMEGLoader;
 import fr.azures04.sgcraftreborn.client.models.esmeg.ESMEGModel;
 import fr.azures04.sgcraftreborn.client.models.esmeg.ESMEGRenderer;
-import net.minecraft.client.renderer.tileentity.TileEntityItemStackRenderer;
+import net.minecraft.client.renderer.tileentity.ItemStackTileEntityRenderer;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
 
-public class StargateControllerISTER extends TileEntityItemStackRenderer {
+public class StargateControllerISTER extends ItemStackTileEntityRenderer {
 
     private ESMEGModel model;
 
@@ -19,6 +19,6 @@ public class StargateControllerISTER extends TileEntityItemStackRenderer {
 
     @Override
     public void renderByItem(ItemStack stack) {
-        ESMEGRenderer.renderWithRotation(model, 0, 0, 0, EnumFacing.NORTH);
+        ESMEGRenderer.renderWithRotation(model, 0, 0, 0, Direction.NORTH);
     }
 }

@@ -3,8 +3,8 @@ package fr.azures04.sgcraftreborn.common.listeners;
 import fr.azures04.sgcraftreborn.common.Constants;
 import fr.azures04.sgcraftreborn.common.config.SGCraftRebornConfig;
 import fr.azures04.sgcraftreborn.common.registries.ModBlocks;
-import net.minecraft.init.Blocks;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.block.Blocks;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.IWorld;
@@ -23,7 +23,7 @@ public class WorldGenHandler {
         if (!SGCraftRebornConfig.ADD_ORES_TO_EXISTING_WORLDS.get()) {
             return;
         }
-        NBTTagCompound nbt = event.getData();
+        CompoundNBT nbt = event.getData();
         if (nbt.getBoolean("sgcraft_naquadah_generated")) {
             return;
         }
@@ -37,6 +37,8 @@ public class WorldGenHandler {
     }
 
     private static void generateNaquadah(IChunk chunk, IWorld world) {
+        if (world == null) return;
+
         Random random = new Random();
         ChunkPos chunkPos = chunk.getPos();
 

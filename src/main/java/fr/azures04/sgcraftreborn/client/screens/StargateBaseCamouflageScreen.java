@@ -1,14 +1,15 @@
 package fr.azures04.sgcraftreborn.client.screens;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import fr.azures04.sgcraftreborn.common.Constants;
 import fr.azures04.sgcraftreborn.common.containers.StargateBaseCamouflageContainer;
 import fr.azures04.sgcraftreborn.common.world.StargateAddressing;
-import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.inventory.GuiContainer;
-import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.gui.screen.inventory.ContainerScreen;
+import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.text.ITextComponent;
 
-public class StargateBaseCamouflageScreen extends GuiContainer {
+public class StargateBaseCamouflageScreen extends ContainerScreen<StargateBaseCamouflageContainer> {
 
     private static final ResourceLocation GUI_TEXTURE = new ResourceLocation(Constants.MOD_ID, "textures/gui/sg_gui.png");
     private static final ResourceLocation SYMBOL_TEXTURE = new ResourceLocation(Constants.MOD_ID, "textures/gui/symbols48.png");
@@ -17,18 +18,18 @@ public class StargateBaseCamouflageScreen extends GuiContainer {
     private String rawAddress = "";
     private String formattedAddress = "";
 
-    public StargateBaseCamouflageScreen(StargateBaseCamouflageContainer container) {
-        super(container);
+    public StargateBaseCamouflageScreen(StargateBaseCamouflageContainer container, PlayerInventory playerInventory, ITextComponent title) {
+        super(container, playerInventory, title);
         this.container = container;
-        this.xSize = 256;
-        this.ySize = 208;
+        xSize = 256;
+        ySize = 208;
 
-        String address = container.te.getAddress();
+        String address = container.base.getAddress();
         if (address != null && !address.isEmpty()) {
-            this.rawAddress = address;
-            this.formattedAddress = StargateAddressing.formatAddress(address).replaceAll(" ", "-");
+            rawAddress = address;
+            formattedAddress = StargateAddressing.formatAddress(address).replaceAll(" ", "-");
         } else {
-            this.formattedAddress = "";
+            formattedAddress = "";
         }
     }
 
@@ -38,35 +39,35 @@ public class StargateBaseCamouflageScreen extends GuiContainer {
 
     @Override
     public void render(int mouseX, int mouseY, float partialTicks) {
-        this.drawDefaultBackground();
+        renderBackground();
         super.render(mouseX, mouseY, partialTicks);
-        this.renderHoveredToolTip(mouseX, mouseY);
+        renderHoveredToolTip(mouseX, mouseY);
     }
 
     @Override
     protected void drawGuiContainerForegroundLayer(int mouseX, int mouseY) {
-        int centerX = this.xSize / 2;
+        int centerX = xSize / 2;
 
         String title = "Stargate Address";
-        this.fontRenderer.drawString(title, centerX - (this.fontRenderer.getStringWidth(title) / 2), 8, 0x004c66);
-        this.fontRenderer.drawString(formattedAddress, centerX - (this.fontRenderer.getStringWidth(formattedAddress) / 2), 72, 0x004c66);
+        font.drawString(title, centerX - (font.getStringWidth(title) / 2), 8, 0x004c66);
+        font.drawString(formattedAddress, centerX - (font.getStringWidth(formattedAddress) / 2), 72, 0x004c66);
 
         String camoText = "Base Camouflage";
-        this.fontRenderer.drawString(camoText, 92 - (this.fontRenderer.getStringWidth(camoText) / 2), 92, 0x004c66);
+        font.drawString(camoText, 92 - (font.getStringWidth(camoText) / 2), 92, 0x004c66);
     }
 
     @Override
     protected void drawGuiContainerBackgroundLayer(float partialTicks, int mouseX, int mouseY) {
         GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F);
 
-        int relX = (this.width - this.xSize) / 2;
-        int relY = (this.height - this.ySize) / 2;
+        int relX = (width - xSize) / 2;
+        int relY = (height - ySize) / 2;
 
-        this.mc.getTextureManager().bindTexture(GUI_TEXTURE);
-        this.drawTexturedModalRect(relX, relY, 0, 0, this.xSize, this.ySize);
+        minecraft.getTextureManager().bindTexture(GUI_TEXTURE);
+        blit(relX, relY, 0, 0, xSize, ySize);
 
         if (!rawAddress.isEmpty()) {
-            drawAddressSymbols(relX + (this.xSize / 2), relY + 22, rawAddress);
+            drawAddressSymbols(relX + (xSize / 2), relY + 22, rawAddress);
         }
     }
 
@@ -79,7 +80,7 @@ public class StargateBaseCamouflageScreen extends GuiContainer {
         int x0 = cx - (address.length() * cellSize) / 2;
         int y0 = y + (frameHeight / 2) - (cellSize / 2);
 
-        this.mc.getTextureManager().bindTexture(SYMBOL_TEXTURE);
+        minecraft.getTextureManager().bindTexture(SYMBOL_TEXTURE);
 
         GlStateManager.enableBlend();
 
@@ -92,7 +93,7 @@ public class StargateBaseCamouflageScreen extends GuiContainer {
                 int u = col * symbolSizeOnTexture;
                 int v = row * symbolSizeOnTexture;
 
-                Gui.drawScaledCustomSizeModalRect(x0 + (i * cellSize), y0, u, v,symbolSizeOnTexture, symbolSizeOnTexture,cellSize, cellSize, 512, 256                );
+                blit(x0 + (i * cellSize), y0, cellSize, cellSize, u, v, symbolSizeOnTexture, symbolSizeOnTexture, 512, 256);
             }
         }
 

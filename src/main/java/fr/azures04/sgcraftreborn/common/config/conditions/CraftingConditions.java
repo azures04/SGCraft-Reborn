@@ -4,24 +4,52 @@ import com.google.gson.JsonObject;
 import fr.azures04.sgcraftreborn.common.Constants;
 import fr.azures04.sgcraftreborn.common.config.SGCraftRebornConfig;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.common.crafting.IConditionSerializer;
+import net.minecraftforge.common.crafting.conditions.ICondition;
+import net.minecraftforge.common.crafting.conditions.IConditionSerializer;
 
-import java.util.function.BooleanSupplier;
-
-public class CraftingConditions implements IConditionSerializer {
+public class CraftingConditions implements ICondition {
 
     public static final ResourceLocation ID = new ResourceLocation(Constants.MOD_ID, "config");
+    private final String key;
+
+    public CraftingConditions(String key) {
+        this.key = key;
+    }
 
     @Override
-    public BooleanSupplier parse(JsonObject json) {
-        String key = json.get("key").getAsString();
+    public ResourceLocation getID() {
+        return ID;
+    }
+
+    // C'est ici que la vérification de ta configuration se fait
+    @Override
+    public boolean test() {
         switch (key) {
             case "allowCraftingCrystals":
-                return () -> SGCraftRebornConfig.ALLOW_CRAFTING_CRYSTALS.get();
+                return SGCraftRebornConfig.ALLOW_CRAFTING_CRYSTALS.get();
             case "allowCraftingNaquadah":
-                return () -> SGCraftRebornConfig.ALLOW_CRAFTING_NAQUADAH.get();
+                return SGCraftRebornConfig.ALLOW_CRAFTING_NAQUADAH.get();
             default:
-                return () -> false;
+                return false;
+        }
+    }
+
+    public static class Serializer implements IConditionSerializer<CraftingConditions> {
+        public static final Serializer INSTANCE = new Serializer();
+
+        @Override
+        public void write(JsonObject json, CraftingConditions value) {
+            json.addProperty("key", value.key);
+        }
+
+        @Override
+        public CraftingConditions read(JsonObject json) {
+            return new CraftingConditions(json.get("key").getAsString());
+        }
+
+        @Override
+        public ResourceLocation getID() {
+            return CraftingConditions.ID;
         }
     }
 }

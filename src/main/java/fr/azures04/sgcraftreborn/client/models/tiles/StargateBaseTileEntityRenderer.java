@@ -1,27 +1,25 @@
 package fr.azures04.sgcraftreborn.client.models.tiles;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import fr.azures04.sgcraftreborn.common.Constants;
-import fr.azures04.sgcraftreborn.common.config.SGCraftRebornConfig;
 import fr.azures04.sgcraftreborn.common.registries.blocks.StargateBaseBlock;
 import fr.azures04.sgcraftreborn.common.registries.tiles.StargateBaseTileEntity;
 import fr.azures04.sgcraftreborn.common.registries.tiles.states.StargateIrisState;
 import fr.azures04.sgcraftreborn.common.registries.tiles.states.StargateVortexState;
 import net.minecraft.block.Block;
-import net.minecraft.block.state.IBlockState;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.*;
-import net.minecraft.client.renderer.texture.TextureMap;
+import net.minecraft.client.renderer.texture.AtlasTexture;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.client.MinecraftForgeClient;
 import net.minecraftforge.items.CapabilityItemHandler;
 import org.lwjgl.opengl.GL13;
 
-import java.util.Objects;
 
 public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateBaseTileEntity> {
 
@@ -87,20 +85,20 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
     public void render(StargateBaseTileEntity tileEntityIn, double x, double y, double z, float partialTicks, int destroyStage) {
         if (!tileEntityIn.isMerged()) return;
 
-        IBlockState state = tileEntityIn.getWorld().getBlockState(tileEntityIn.getPos());
+        BlockState state = tileEntityIn.getWorld().getBlockState(tileEntityIn.getPos());
 
         if (!(state.getBlock() instanceof StargateBaseBlock)) {
             return;
         }
 
-        EnumFacing facing = state.get(StargateBaseBlock.FACING);
+        Direction facing = state.get(StargateBaseBlock.FACING);
 
         GlStateManager.pushMatrix();
         GlStateManager.translated(x + 0.5, y + 0.5, z + 0.5);
 
-        if (facing == EnumFacing.UP) {
+        if (facing == Direction.UP) {
             GlStateManager.rotatef(90, 1, 0, 0);
-        } else if (facing == EnumFacing.DOWN) {
+        } else if (facing == Direction.DOWN) {
             GlStateManager.rotatef(-90, 1, 0, 0);
         } else {
             GlStateManager.rotatef(-facing.getHorizontalAngle(), 0, 1, 0);
@@ -145,15 +143,15 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
             GlStateManager.pushMatrix();
 
             GlStateManager.activeTexture(GL13.GL_TEXTURE1);
-            GlStateManager.enableTexture2D();
+            GlStateManager.enableTexture();
             GL13.glMultiTexCoord2f(GL13.GL_TEXTURE1, (float) lightX, (float) lightY);
 
             GlStateManager.activeTexture(GL13.GL_TEXTURE0);
-            this.bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
+            this.bindTexture(AtlasTexture.LOCATION_BLOCKS_TEXTURE);
 
             RenderHelper.enableStandardItemLighting();
 
-            EnumFacing facing = tileEntityIn.getWorld()
+            Direction facing = tileEntityIn.getWorld()
                     .getBlockState(tileEntityIn.getPos())
                     .get(StargateBaseBlock.FACING);
 
@@ -164,7 +162,7 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
                 if (stack.isEmpty()) continue;
                 Block block = Block.getBlockFromItem(stack.getItem());
                 if (block == Blocks.AIR) continue;
-                IBlockState state = block.getDefaultState();
+                BlockState state = block.getDefaultState();
 
                 GlStateManager.pushMatrix();
 
@@ -213,7 +211,7 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
             RenderHelper.disableStandardItemLighting();
 
             GlStateManager.activeTexture(GL13.GL_TEXTURE1);
-            GlStateManager.enableTexture2D();
+            GlStateManager.enableTexture();
             GlStateManager.activeTexture(GL13.GL_TEXTURE0);
 
             GlStateManager.popMatrix();

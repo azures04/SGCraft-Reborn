@@ -4,9 +4,9 @@ import fr.azures04.sgcraftreborn.common.registries.blocks.StargateBaseBlock;
 import fr.azures04.sgcraftreborn.common.registries.blocks.StargateChevronBlock;
 import fr.azures04.sgcraftreborn.common.registries.blocks.StargateRingBlock;
 import fr.azures04.sgcraftreborn.common.registries.tiles.StargateBaseTileEntity;
-import net.minecraft.block.state.IBlockState;
+import net.minecraft.block.BlockState;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
@@ -25,7 +25,7 @@ public class StargateStructure {
         {1, 0}, {-1, 0}
     };
 
-    public static BlockPos getWorldPos(BlockPos base, EnumFacing facing, int gridX, int gridY) {
+    public static BlockPos getWorldPos(BlockPos base, Direction facing, int gridX, int gridY) {
         switch (facing) {
             case NORTH:
                 return base.add(-gridX, gridY, 0);
@@ -44,7 +44,7 @@ public class StargateStructure {
         }
     }
 
-    public static boolean checkStructure(World world, BlockPos base, EnumFacing facing) {
+    public static boolean checkStructure(World world, BlockPos base, Direction facing) {
         for (int[] pos : CHEVRON_POSITIONS) {
             BlockPos worldPos = getWorldPos(base, facing, pos[0], pos[1]);
             if (!(world.getBlockState(worldPos).getBlock() instanceof StargateChevronBlock)) {
@@ -62,7 +62,7 @@ public class StargateStructure {
         return true;
     }
 
-    public static void hideStructure(World world, BlockPos base, EnumFacing facing) {
+    public static void hideStructure(World world, BlockPos base, Direction facing) {
         if (world.getBlockState(base).getBlock() instanceof StargateBaseBlock) {
             world.setBlockState(base, world.getBlockState(base).with(StargateBaseBlock.INVISIBLE, true), 3);
         }
@@ -81,7 +81,7 @@ public class StargateStructure {
         }
     }
 
-    public static void showStructure(World world, BlockPos base, EnumFacing facing) {
+    public static void showStructure(World world, BlockPos base, Direction facing) {
         if (world.getBlockState(base).getBlock() instanceof StargateBaseBlock) {
             world.setBlockState(base, world.getBlockState(base).with(StargateBaseBlock.INVISIBLE, false), 3);
         }
@@ -104,9 +104,9 @@ public class StargateStructure {
             for (int y = -5; y <= 5; y++) {
                 for (int z = -5; z <= 5; z++) {
                     BlockPos checkPos = pos.add(x, y, z);
-                    IBlockState checkState = world.getBlockState(checkPos);
+                    BlockState checkState = world.getBlockState(checkPos);
                     if (checkState.getBlock() instanceof StargateBaseBlock) {
-                        EnumFacing facing = checkState.get(StargateBaseBlock.FACING);
+                        Direction facing = checkState.get(StargateBaseBlock.FACING);
                         boolean formed = checkStructure(world, checkPos, facing);
                         TileEntity te = world.getTileEntity(checkPos);
                         if (te instanceof StargateBaseTileEntity) {

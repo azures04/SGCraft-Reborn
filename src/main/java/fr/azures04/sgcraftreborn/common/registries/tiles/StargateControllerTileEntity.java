@@ -1,6 +1,5 @@
 package fr.azures04.sgcraftreborn.common.registries.tiles;
 
-import fr.azures04.sgcraftreborn.common.Constants;
 import fr.azures04.sgcraftreborn.common.config.SGCraftRebornConfig;
 import fr.azures04.sgcraftreborn.common.containers.StargateControllerFuelContainer;
 import fr.azures04.sgcraftreborn.common.containers.slots.NaquadahFuelSlot;
@@ -12,26 +11,26 @@ import fr.azures04.sgcraftreborn.common.registries.tiles.states.StargateVortexSt
 import fr.azures04.sgcraftreborn.common.world.StargateAddressing;
 import fr.azures04.sgcraftreborn.common.world.data.StargateWorldData;
 import fr.azures04.sgcraftreborn.common.util.math.ExtendedPos;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.InventoryPlayer;
-import net.minecraft.inventory.Container;
+import net.minecraft.block.BlockState;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.inventory.container.Container;
+import net.minecraft.inventory.container.INamedContainerProvider;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.network.NetworkManager;
-import net.minecraft.network.play.server.SPacketUpdateTileEntity;
+import net.minecraft.network.play.server.SUpdateTileEntityPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityType;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TextComponentTranslation;
-import net.minecraft.world.IInteractionObject;
+import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.World;
-import net.minecraft.world.WorldServer;
 import net.minecraft.world.dimension.DimensionType;
+import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.CapabilityItemHandler;
@@ -42,7 +41,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Objects;
 
-public class StargateControllerTileEntity extends TileEntity implements IInteractionObject {
+public class StargateControllerTileEntity extends TileEntity implements INamedContainerProvider {
 
     private double fuelLevel;
     private ExtendedPos linkedStargate;
@@ -112,7 +111,7 @@ public class StargateControllerTileEntity extends TileEntity implements IInterac
         setLinkedStargate(new ExtendedPos(gate.getPos(), world.getDimension().getType().getId()));
         gate.setControllerPos(new ExtendedPos(pos, world.getDimension().getType().getId()));
 
-        IBlockState state = world.getBlockState(pos);
+        BlockState state = world.getBlockState(pos);
         if (state.getBlock() instanceof StargateControllerBlock) {
             world.setBlockState(pos, state.with(StargateControllerBlock.STATUS, StargateControllerStatus.LINKED), 3);
         }
@@ -123,7 +122,7 @@ public class StargateControllerTileEntity extends TileEntity implements IInterac
     public StargateBaseTileEntity getLinkedStargateTE(World world) {
         if (linkedStargate != null) {
             if (!world.isBlockLoaded(linkedStargate)) return null;
-            IBlockState state = world.getBlockState(linkedStargate);
+            BlockState state = world.getBlockState(linkedStargate);
             if (state.getBlock() instanceof StargateBaseBlock) {
                 TileEntity te = world.getTileEntity(linkedStargate);
                 if (te instanceof StargateBaseTileEntity && ((StargateBaseTileEntity) te).isMerged()) {
@@ -144,13 +143,13 @@ public class StargateControllerTileEntity extends TileEntity implements IInterac
 
     public void unlink() {
         setLinkedStargate(null);
-        IBlockState state = world.getBlockState(pos);
+        BlockState state = world.getBlockState(pos);
         world.setBlockState(pos, state.with(StargateControllerBlock.STATUS, StargateControllerStatus.UNLINKED), 3);
         sync();
     }
 
     @Override
-    public void read(NBTTagCompound compound) {
+    public void read(CompoundNBT compound) {
         super.read(compound);
         this.fuelLevel = compound.getDouble("fuelLevel");
         if (compound.contains("connectedX", 3)) {
@@ -168,7 +167,7 @@ public class StargateControllerTileEntity extends TileEntity implements IInterac
     }
 
     @Override
-    public NBTTagCompound write(NBTTagCompound compound) {
+    public CompoundNBT write(CompoundNBT compound) {
         compound.putDouble("fuelLevel", fuelLevel);
         if (linkedStargate != null) {
             compound.putInt("connectedX", linkedStargate.getX());
@@ -215,7 +214,8 @@ public class StargateControllerTileEntity extends TileEntity implements IInterac
         }
 
         MinecraftServer server = world.getServer();
-        WorldServer remoteWorld = server.getWorld(DimensionType.getById(remotePos.getDimension()));
+        DimensionType dimType = DimensionType.getById(remotePos.getDimension());
+        ServerWorld remoteWorld = server.forgeGetWorldMap().get(dimType);
         TileEntity remoteTe = remoteWorld.getTileEntity(remotePos.getPos());
         if (!(remoteTe instanceof StargateBaseTileEntity)) {
             return StargateAddressing.StargateAddressingException.GATE_NOT_FOUND;
@@ -252,7 +252,7 @@ public class StargateControllerTileEntity extends TileEntity implements IInterac
 
     public void onStargateStateChanged(StargateVortexState gateState) {
         if (world == null || world.isRemote) return;
-        IBlockState currentState = world.getBlockState(this.pos);
+        BlockState currentState = world.getBlockState(this.pos);
 
         if (currentState.getBlock() instanceof StargateControllerBlock) {
             if (gateState == StargateVortexState.IDLE) {
@@ -274,53 +274,28 @@ public class StargateControllerTileEntity extends TileEntity implements IInterac
         super.remove();
     }
 
+    @Nullable
     @Override
-    public SPacketUpdateTileEntity getUpdatePacket() {
-        NBTTagCompound nbt = new NBTTagCompound();
+    public SUpdateTileEntityPacket getUpdatePacket() {
+        CompoundNBT nbt = new CompoundNBT();
         this.write(nbt);
-        return new SPacketUpdateTileEntity(this.pos, 1, nbt);
+        return new SUpdateTileEntityPacket(this.pos, -1, this.getUpdateTag());
     }
 
     @Override
-    public void onDataPacket(NetworkManager net, SPacketUpdateTileEntity pkt) {
+    public CompoundNBT getUpdateTag() {
+        return this.write(new CompoundNBT());
+    }
+
+    @Override
+    public void onDataPacket(NetworkManager net, SUpdateTileEntityPacket pkt) {
         this.read(pkt.getNbtCompound());
         super.onDataPacket(net, pkt);
     }
 
-    @Override
-    public NBTTagCompound getUpdateTag() {
-        return this.write(new NBTTagCompound());
-    }
-
-    @Override
-    public Container createContainer(InventoryPlayer playerInventory, EntityPlayer playerIn) {
-        return new StargateControllerFuelContainer(playerInventory, this.pos);
-    }
-
-    @Override
-    public String getGuiID() {
-        return Constants.MOD_ID + ":controller_fuel";
-    }
-
-    @Override
-    public ITextComponent getName() {
-        return new TextComponentTranslation("container.sgcraftreborn.dhd");
-    }
-
-    @Override
-    public boolean hasCustomName() {
-        return false;
-    }
-
-    @Nullable
-    @Override
-    public ITextComponent getCustomName() {
-        return null;
-    }
-
     @Nonnull
     @Override
-    public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable EnumFacing side) {
+    public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable Direction side) {
         if (cap == CapabilityItemHandler.ITEM_HANDLER_CAPABILITY) {
             return inventoryHolder.cast();
         }
@@ -384,8 +359,19 @@ public class StargateControllerTileEntity extends TileEntity implements IInterac
     public void sync() {
         markDirty();
         if (world != null && !world.isRemote) {
-            IBlockState state = world.getBlockState(pos);
+            BlockState state = world.getBlockState(pos);
             world.notifyBlockUpdate(pos, state, state, 3);
         }
+    }
+
+    @Override
+    public ITextComponent getDisplayName() {
+        return new TranslationTextComponent("container.sgcraftreborn.dhd");
+    }
+
+    @Nullable
+    @Override
+    public Container createMenu(int i, PlayerInventory playerInventory, PlayerEntity playerEntity) {
+        return new StargateControllerFuelContainer(i, playerInventory, pos);
     }
 }

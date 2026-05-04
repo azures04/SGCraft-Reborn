@@ -1,6 +1,6 @@
 package fr.azures04.sgcraftreborn.client.screens;
 
-import fr.azures04.sgcraftreborn.SGCraftReborn;
+import com.mojang.blaze3d.platform.GlStateManager;
 import fr.azures04.sgcraftreborn.common.network.StargateNetwork;
 import fr.azures04.sgcraftreborn.common.network.packets.StargateCloseVortexPacket;
 import fr.azures04.sgcraftreborn.common.network.packets.StargateDialPacket;
@@ -10,19 +10,14 @@ import fr.azures04.sgcraftreborn.common.registries.blocks.states.StargateControl
 import fr.azures04.sgcraftreborn.common.registries.tiles.StargateControllerTileEntity;
 import fr.azures04.sgcraftreborn.common.util.math.ExtendedPos;
 import net.minecraft.client.audio.SimpleSound;
-import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.init.SoundEvents;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ResourceLocation;
-
 import fr.azures04.sgcraftreborn.common.Constants;
 import fr.azures04.sgcraftreborn.common.world.StargateAddressing;
-import net.minecraft.util.SoundCategory;
-import org.apache.logging.log4j.Level;
+import net.minecraft.util.text.ITextComponent;
 
-public class StargateControllerScreen extends GuiScreen {
+public class StargateControllerScreen extends Screen {
 
     private static final ResourceLocation GUI_TEXTURE = new ResourceLocation(Constants.MOD_ID, "textures/gui/dhd_gui.png");
     private static final ResourceLocation CENTRE_TEXTURE = new ResourceLocation(Constants.MOD_ID, "textures/gui/dhd_centre.png");
@@ -47,8 +42,8 @@ public class StargateControllerScreen extends GuiScreen {
     private final ExtendedPos controllerPos;
     private final StargateControllerStatus status;
 
-    public StargateControllerScreen(ExtendedPos controllerPos, StargateControllerStatus status, boolean hasChevronUpgrade) {
-        super();
+    public StargateControllerScreen(ITextComponent titleIn, ExtendedPos controllerPos, StargateControllerStatus status, boolean hasChevronUpgrade) {
+        super(titleIn);
         this.controllerPos = controllerPos;
         this.status = status;
         if (status != StargateControllerStatus.LINKED) {
@@ -59,16 +54,16 @@ public class StargateControllerScreen extends GuiScreen {
     }
 
     @Override
-    protected void initGui() {
-        super.initGui();
+    protected void init() {
+        super.init();
 
-        TileEntity te = mc.world.getTileEntity(controllerPos.getPos());
-        if (te instanceof StargateControllerTileEntity) {
-            this.enteredAddress = ((StargateControllerTileEntity) te).getDialingBuffer();
+        TileEntity base = minecraft.world.getTileEntity(controllerPos.getPos());
+        if (base instanceof StargateControllerTileEntity) {
+            this.enteredAddress = ((StargateControllerTileEntity) base).getDialingBuffer();
         }
 
-        if (this.mc != null && this.mc.mouseHelper != null) {
-            this.mc.mouseHelper.ungrabMouse();
+        if (minecraft != null && minecraft.mouseHelper != null) {
+            minecraft.mouseHelper.ungrabMouse();
         }
 
         this.dhdTop = this.height - dhdHeight;
@@ -78,15 +73,15 @@ public class StargateControllerScreen extends GuiScreen {
 
     @Override
     public void render(int mouseX, int mouseY, float partialTicks) {
-        this.drawDefaultBackground();
+        this.renderBackground();
 
         GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F);
         GlStateManager.enableBlend();
         GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
         GlStateManager.disableAlphaTest();
 
-        this.mc.getTextureManager().bindTexture(GUI_TEXTURE);
-        drawModalRectWithCustomSizedTexture((this.width - dhdWidth) / 2, this.dhdTop, 0, 0, dhdWidth, dhdHeight, dhdWidth, dhdHeight);
+        minecraft.getTextureManager().bindTexture(GUI_TEXTURE);
+        blit((this.width - dhdWidth) / 2, this.dhdTop, 0, 0, dhdWidth, dhdHeight, dhdWidth, dhdHeight);
 
         drawOrangeButton();
 
@@ -100,7 +95,7 @@ public class StargateControllerScreen extends GuiScreen {
     }
 
     private void drawOrangeButton() {
-        this.mc.getTextureManager().bindTexture(CENTRE_TEXTURE);
+        minecraft.getTextureManager().bindTexture(CENTRE_TEXTURE);
 
         switch (status) {
             case LINKED:
@@ -117,15 +112,15 @@ public class StargateControllerScreen extends GuiScreen {
         double rx = dhdWidth * 48 / 512.0;
         double ry = dhdHeight * 48 / 256.0;
 
-        Gui.drawScaledCustomSizeModalRect(dhdCentreX - (int)rx, dhdCentreY - (int)ry - 6, 64, 0, 64, 48, (int)(2 * rx), (int)(1.5 * ry), 128, 64);
+        blit(dhdCentreX - (int)rx, dhdCentreY - (int)ry - 6, (int)(2 * rx), (int)(1.5 * ry), 64, 0, 64, 48, 128, 64);
 
         if (status == StargateControllerStatus.ACTIVATED) {
             GlStateManager.blendFunc(GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ONE);
             GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F); // Reset couleur pour la texture de lueur
 
             double d = 5;
-            Gui.drawScaledCustomSizeModalRect(dhdCentreX - (int)(rx + d), dhdCentreY - (int)(ry + d) - 6, 0, 0, 64, 32, (int)(2 * (rx + d)), (int)(ry + d), 128, 64);
-            Gui.drawScaledCustomSizeModalRect(dhdCentreX - (int)(rx + d), dhdCentreY - 6, 0, 32, 64, 32, (int)(2 * (rx + d)), (int)(0.5 * ry + d), 128, 64);
+            blit(dhdCentreX - (int)(rx + d), dhdCentreY - (int)(ry + d) - 6, (int)(2 * (rx + d)), (int)(ry + d), 0, 0, 64, 32, 128, 64);
+            blit(dhdCentreX - (int)(rx + d), dhdCentreY - 6, (int)(2 * (rx + d)), (int)(0.5 * ry + d), 0, 32, 64, 32, 128, 64);
             GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
         }
 
@@ -134,7 +129,7 @@ public class StargateControllerScreen extends GuiScreen {
     private void drawEnteredSymbols() {
         if (enteredAddress.isEmpty()) return;
 
-        this.mc.getTextureManager().bindTexture(SYMBOL_TEXTURE);
+        minecraft.getTextureManager().bindTexture(SYMBOL_TEXTURE);
 
         int x = this.width / 2;
         int y = this.dhdTop - 80;
@@ -150,14 +145,14 @@ public class StargateControllerScreen extends GuiScreen {
             int row = s / symbolsPerRowInTexture;
             int col = s % symbolsPerRowInTexture;
 
-            Gui.drawScaledCustomSizeModalRect(x0 + (i * cellSize), y0, col * symbolWidthInTexture, row * symbolHeightInTexture, symbolWidthInTexture, symbolHeightInTexture, cellSize, cellSize, symbolTextureWidth, symbolTextureHeight);
+            blit(x0 + (i * cellSize), y0, cellSize, cellSize, col * symbolWidthInTexture, row * symbolHeightInTexture, symbolWidthInTexture, symbolHeightInTexture, symbolTextureWidth, symbolTextureHeight);
         }
     }
 
     private void drawEnteredString() {
         String formatted = padAddress(enteredAddress);
-        int textWidth = this.fontRenderer.getStringWidth(formatted);
-        this.fontRenderer.drawStringWithShadow(formatted, (this.width - textWidth) / 2.0F, this.dhdTop - 20, 0xFFFFFF);
+        int textWidth = font.getStringWidth(formatted);
+        font.drawStringWithShadow(formatted, (this.width - textWidth) / 2.0F, this.dhdTop - 20, 0xFFFFFF);
     }
 
     private String padAddress(String address) {
@@ -204,7 +199,7 @@ public class StargateControllerScreen extends GuiScreen {
 
     private void dhdButtonPressed(int id) {
         if (id == 0) {
-            mc.getSoundHandler().play(SimpleSound.master(ModSounds.DHD_DIAL, 1.0F));
+            minecraft.getSoundHandler().play(SimpleSound.master(ModSounds.DHD_DIAL, 1.0F));
             switch (status) {
                 case LINKED:
                     if (enteredAddress.length() == 7 || enteredAddress.length() == 9) {
@@ -215,7 +210,7 @@ public class StargateControllerScreen extends GuiScreen {
                     StargateNetwork.INSTANCE.sendToServer(new StargateCloseVortexPacket(this.controllerPos));
                     break;
             }
-            this.close();
+            this.onClose();
         } else if (id >= 37) {
             backspace();
             updateServerBuffer();
@@ -226,7 +221,7 @@ public class StargateControllerScreen extends GuiScreen {
     }
 
     private void buttonSound() {
-        mc.getSoundHandler().play(SimpleSound.master(ModSounds.DHD_PRESS, 1.0F));
+        minecraft.getSoundHandler().play(SimpleSound.master(ModSounds.DHD_PRESS, 1.0F));
     }
 
     @Override
@@ -243,7 +238,7 @@ public class StargateControllerScreen extends GuiScreen {
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (keyCode == 256) {
-            this.close();
+            this.onClose();
             return true;
         }
         if (keyCode == 259 || keyCode == 261) {
@@ -272,7 +267,7 @@ public class StargateControllerScreen extends GuiScreen {
     }
 
     @Override
-    public boolean doesGuiPauseGame() {
+    public boolean isPauseScreen() {
         return true;
     }
 

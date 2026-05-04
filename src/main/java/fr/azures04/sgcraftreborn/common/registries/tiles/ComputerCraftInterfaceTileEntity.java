@@ -1,7 +1,6 @@
 package fr.azures04.sgcraftreborn.common.registries.tiles;
 
 import fr.azures04.sgcraftreborn.common.api.StargateAbstractAPI;
-import fr.azures04.sgcraftreborn.common.integrations.CCTPeripheral;
 import fr.azures04.sgcraftreborn.common.registries.ModTilesEntities;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityType;

@@ -1,7 +1,7 @@
 package fr.azures04.sgcraftreborn.common.registries.blocks;
 
 import net.minecraft.block.Block;
-import net.minecraft.block.state.IBlockState;
+import net.minecraft.block.BlockState;
 import net.minecraft.util.BlockRenderLayer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockReader;
@@ -18,20 +18,12 @@ public class StargateGenericBlock extends Block {
     }
 
     @Override
-    public boolean isFullCube(IBlockState state) {
+    public boolean isNormalCube(BlockState state, IBlockReader world, BlockPos pos) {
         return true;
     }
 
     @Override
-    public boolean isNormalCube(IBlockState state, IBlockReader world, BlockPos pos) {
+    public boolean causesSuffocation(BlockState state, IBlockReader reader, BlockPos pos) {
         return true;
     }
-
-    @Override
-    public boolean causesSuffocation(IBlockState state) {
-        return true;
-    }
-
-
-
 }

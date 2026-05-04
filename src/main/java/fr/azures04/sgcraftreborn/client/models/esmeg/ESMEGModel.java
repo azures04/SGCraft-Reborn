@@ -1,7 +1,7 @@
 package fr.azures04.sgcraftreborn.client.models.esmeg;
 
 import fr.azures04.sgcraftreborn.common.exceptions.MalformedSMEGException;
-import net.minecraft.block.state.IBlockState;
+import net.minecraft.block.BlockState;
 import net.minecraft.state.IProperty;
 import net.minecraft.util.IStringSerializable;
 import net.minecraft.util.ResourceLocation;
@@ -83,7 +83,7 @@ public class ESMEGModel {
     }
 
     public static class BlockStateParser {
-        public static Map<String, String> fromBlockState(IBlockState state) {
+        public static Map<String, String> fromBlockState(BlockState state) {
             Map<String, String> result = new HashMap<>();
             for (Map.Entry<IProperty<?>, Comparable<?>> entry : state.getValues().entrySet()) {
                 String valueName = entry.getValue() instanceof IStringSerializable ?

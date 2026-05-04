@@ -31,7 +31,7 @@ public class SGCraftReborn {
 
         MinecraftForge.EVENT_BUS.register(this);
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, SGCraftRebornConfig.SPEC);
-        CraftingHelper.register(CraftingConditions.ID, new CraftingConditions());
+        CraftingHelper.register(CraftingConditions.Serializer.INSTANCE);
     }
 
     private void setup(final FMLCommonSetupEvent event) {

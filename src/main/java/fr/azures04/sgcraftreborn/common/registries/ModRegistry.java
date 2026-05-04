@@ -2,8 +2,9 @@ package fr.azures04.sgcraftreborn.common.registries;
 
 import fr.azures04.sgcraftreborn.client.models.ISpecialItemRenderer;
 import net.minecraft.block.Block;
+import net.minecraft.inventory.container.ContainerType;
+import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemBlock;
 import net.minecraft.tileentity.TileEntityType;
 import net.minecraft.util.SoundEvent;
 import net.minecraftforge.event.RegistryEvent;
@@ -29,7 +30,7 @@ public class ModRegistry {
             if (block instanceof ISpecialItemRenderer) {
                 properties = properties.setTEISR(((ISpecialItemRenderer) block)::getISTER);
             }
-            ItemBlock blockItem = new ItemBlock(block, properties);
+            BlockItem blockItem = new BlockItem(block, properties);
             blockItem.setRegistryName(block.getRegistryName());
             registry.register(blockItem);
         }
@@ -45,5 +46,9 @@ public class ModRegistry {
         ModSounds.SOUNDS_TO_REGISTER.forEach(event.getRegistry()::register);
     }
 
+    @SubscribeEvent
+    public static void onContainerRegistry(final RegistryEvent.Register<ContainerType<?>> event) {
+        ModContainers.CONTAINERS_TO_REGISTER.forEach(event.getRegistry()::register);
+    }
 
 }

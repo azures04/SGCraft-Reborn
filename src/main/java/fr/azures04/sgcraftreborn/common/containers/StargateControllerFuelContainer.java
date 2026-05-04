@@ -2,27 +2,25 @@ package fr.azures04.sgcraftreborn.common.containers;
 
 import fr.azures04.sgcraftreborn.common.config.SGCraftRebornConfig;
 import fr.azures04.sgcraftreborn.common.containers.slots.NaquadahFuelSlot;
+import fr.azures04.sgcraftreborn.common.registries.ModContainers;
 import fr.azures04.sgcraftreborn.common.registries.tiles.StargateControllerTileEntity;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.InventoryPlayer;
-import net.minecraft.inventory.Container;
-import net.minecraft.inventory.IContainerListener;
-import net.minecraft.inventory.Slot;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.inventory.container.Container;
+import net.minecraft.inventory.container.Slot;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.IntReferenceHolder;
 import net.minecraft.util.math.BlockPos;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 
 public class StargateControllerFuelContainer extends Container {
 
     private final StargateControllerTileEntity controller;
-    private int lastEnergyScaled = -1;
     private int clientEnergyScaled = 0;
 
-    public StargateControllerFuelContainer(InventoryPlayer playerInv, BlockPos pos) {
-        super();
+    public StargateControllerFuelContainer(int windowId, PlayerInventory playerInv, BlockPos pos) {
+        super(ModContainers.CONTROLLER_FUEL, windowId);
 
         this.controller = (StargateControllerTileEntity) playerInv.player.world.getTileEntity(pos);
         IItemHandler inventory = controller.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY).orElseThrow(RuntimeException::new);
@@ -41,10 +39,27 @@ public class StargateControllerFuelContainer extends Container {
         for (int col = 0; col < 9; ++col) {
             this.addSlot(new Slot(playerInv, col, 48 + col * 18, 182));
         }
+
+        // NOUVEAU SYSTEME 1.14.4 : Synchronisation automatique Serveur -> Client
+        this.trackInt(new IntReferenceHolder() {
+            @Override
+            public int get() {
+                // Lu par le serveur
+                double fuel = controller.getFuelLevel();
+                double max = SGCraftRebornConfig.ENERGY_PER_FUEL_ITEM.get();
+                return max > 0 ? (int) ((fuel / max) * 10000) : 0;
+            }
+
+            @Override
+            public void set(int value) {
+                // Reçu par le client
+                clientEnergyScaled = value;
+            }
+        });
     }
 
     @Override
-    public ItemStack transferStackInSlot(EntityPlayer playerIn, int index) {
+    public ItemStack transferStackInSlot(PlayerEntity playerIn, int index) {
         ItemStack itemstack = ItemStack.EMPTY;
         Slot slot = this.inventorySlots.get(index);
 
@@ -76,36 +91,15 @@ public class StargateControllerFuelContainer extends Container {
     }
 
     @Override
-    public boolean canInteractWith(EntityPlayer playerIn) {
-        return playerIn.getDistanceSq(controller.getPos()) <= 8.0D;
+    public boolean canInteractWith(PlayerEntity playerIn) {
+        return playerIn.getDistanceSq(
+                controller.getPos().getX() + 0.5D,
+                controller.getPos().getY() + 0.5D,
+                controller.getPos().getZ() + 0.5D
+        ) <= 64.0D;
     }
 
     public double getEnergyScaled() {
         return clientEnergyScaled / 10000.0;
     }
-
-    @Override
-    public void detectAndSendChanges() {
-        super.detectAndSendChanges();
-
-        double fuel = controller.getFuelLevel();
-        double max = SGCraftRebornConfig.ENERGY_PER_FUEL_ITEM.get();
-        int currentEnergyScaled = max > 0 ? (int) ((fuel / max) * 10000) : 0;
-
-        for (IContainerListener listener : this.listeners) {
-            if (this.lastEnergyScaled != currentEnergyScaled) {
-                listener.sendWindowProperty(this, 0, currentEnergyScaled);
-            }
-        }
-        this.lastEnergyScaled = currentEnergyScaled;
-    }
-
-    @Override
-    @OnlyIn(Dist.CLIENT)
-    public void updateProgressBar(int id, int data) {
-        if (id == 0) {
-            this.clientEnergyScaled = data;
-        }
-    }
-
 }

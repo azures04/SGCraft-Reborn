@@ -1,27 +1,22 @@
 package fr.azures04.sgcraftreborn.common.registries.tiles;
 
-import fr.azures04.sgcraftreborn.common.Constants;
 import fr.azures04.sgcraftreborn.common.containers.RFPowerUnitContainer;
 import fr.azures04.sgcraftreborn.common.registries.ModTilesEntities;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.InventoryPlayer;
-import net.minecraft.inventory.Container;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.inventory.container.Container;
+import net.minecraft.inventory.container.INamedContainerProvider;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityType;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.ITickable;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TextComponentTranslation;
-import net.minecraft.world.IInteractionObject;
-import net.minecraftforge.common.capabilities.Capability;
+import net.minecraft.util.text.ITextComponent;;
+import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.energy.CapabilityEnergy;
 import net.minecraftforge.energy.EnergyStorage;
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class RFPowerUnitTileEntity extends TileEntity implements ITickable, IInteractionObject {
+public class RFPowerUnitTileEntity extends TileEntity implements ITickableTileEntity, INamedContainerProvider {
 
     private final EnergyStorage energyStorage = new EnergyStorage(4000000);
     private final LazyOptional<EnergyStorage> energyHolder = LazyOptional.of(() -> energyStorage);
@@ -48,29 +43,20 @@ public class RFPowerUnitTileEntity extends TileEntity implements ITickable, IInt
     }
 
     @Override
-    public NBTTagCompound write(NBTTagCompound compound) {
+    public CompoundNBT write(CompoundNBT compound) {
         super.write(compound);
         compound.putInt("energy", energyStorage.getEnergyStored());
         return compound;
     }
 
     @Override
-    public void read(NBTTagCompound compound) {
+    public void read(CompoundNBT compound) {
         super.read(compound);
         if (compound.contains("energy", 3)) {
             energyStorage.extractEnergy(energyStorage.getEnergyStored(), false);
             energyStorage.receiveEnergy(compound.getInt("energy"), false);
             lastEnergy = energyStorage.getEnergyStored();
         }
-    }
-
-    @Nonnull
-    @Override
-    public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable EnumFacing side) {
-        if (cap == CapabilityEnergy.ENERGY) {
-            return energyHolder.cast();
-        }
-        return super.getCapability(cap, side);
     }
 
     @Override
@@ -94,28 +80,14 @@ public class RFPowerUnitTileEntity extends TileEntity implements ITickable, IInt
     }
 
     @Override
-    public Container createContainer(InventoryPlayer playerInventory, EntityPlayer playerIn) {
-        return new RFPowerUnitContainer(playerInventory, pos);
-    }
-
-    @Override
-    public String getGuiID() {
-        return Constants.MOD_ID + ":rf_power_unit";
-    }
-
-    @Override
-    public ITextComponent getName() {
-        return new TextComponentTranslation("container.sgcraftreborn.rf_power_unit");
-    }
-
-    @Override
-    public boolean hasCustomName() {
-        return false;
+    public ITextComponent getDisplayName() {
+        return new TranslationTextComponent("container.sgcraftreborn.rf_power_unit");
     }
 
     @Nullable
     @Override
-    public ITextComponent getCustomName() {
-        return null;
+    public Container createMenu(int i, PlayerInventory playerInventory, PlayerEntity playerEntity) {
+        return new RFPowerUnitContainer(i, playerInventory, pos);
     }
+
 }

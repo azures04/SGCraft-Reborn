@@ -4,7 +4,7 @@ import fr.azures04.sgcraftreborn.SGCraftReborn;
 import fr.azures04.sgcraftreborn.common.registries.tiles.StargateBaseTileEntity;
 import fr.azures04.sgcraftreborn.common.registries.tiles.StargateControllerTileEntity;
 import fr.azures04.sgcraftreborn.common.util.math.ExtendedPos;
-import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
@@ -39,7 +39,7 @@ public class StargateCloseVortexPacket {
 
     public static void handle(StargateCloseVortexPacket msg, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            EntityPlayerMP sender = ctx.get().getSender();
+            ServerPlayerEntity sender = ctx.get().getSender();
             if (sender == null) return;
 
             World world = sender.world;

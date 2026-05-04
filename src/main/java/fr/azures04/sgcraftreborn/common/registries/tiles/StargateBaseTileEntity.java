@@ -1,6 +1,5 @@
 package fr.azures04.sgcraftreborn.common.registries.tiles;
 
-import fr.azures04.sgcraftreborn.common.Constants;
 import fr.azures04.sgcraftreborn.common.api.StargateAbstractAPI;
 import fr.azures04.sgcraftreborn.common.config.SGCraftRebornConfig;
 import fr.azures04.sgcraftreborn.common.containers.StargateBaseCamouflageContainer;
@@ -12,37 +11,37 @@ import fr.azures04.sgcraftreborn.common.registries.tiles.states.StargateIrisStat
 import fr.azures04.sgcraftreborn.common.registries.tiles.states.StargateVortexState;
 import fr.azures04.sgcraftreborn.common.util.math.ExtendedPos;
 import fr.azures04.sgcraftreborn.common.world.StargateAddressing;
-import fr.azures04.sgcraftreborn.common.world.StargateTeleporter;
 import fr.azures04.sgcraftreborn.common.world.data.StargateWorldData;
 import net.minecraft.block.Block;
-import net.minecraft.block.BlockSlab;
-import net.minecraft.block.state.IBlockState;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.SlabBlock;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.entity.player.InventoryPlayer;
-import net.minecraft.inventory.Container;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.inventory.container.Container;
+import net.minecraft.inventory.container.INamedContainerProvider;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.network.NetworkManager;
-import net.minecraft.network.play.server.SPacketUpdateTileEntity;
+import net.minecraft.network.play.server.SUpdateTileEntityPacket;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityType;
 import net.minecraft.util.DamageSource;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.ITickable;
+import net.minecraft.util.Direction;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TextComponentString;
-import net.minecraft.util.text.TextComponentTranslation;
+import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
-import net.minecraft.world.IInteractionObject;
-import net.minecraft.world.WorldServer;
+import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.dimension.DimensionType;
+import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.CapabilityItemHandler;
@@ -53,7 +52,7 @@ import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class StargateBaseTileEntity extends TileEntity implements ITickable, IInteractionObject {
+public class StargateBaseTileEntity extends TileEntity implements ITickableTileEntity, INamedContainerProvider {
 
     private transient Set<StargateAbstractAPI> computerAdapters = ConcurrentHashMap.newKeySet();
 
@@ -100,7 +99,7 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
     }
 
     @Override
-    public NBTTagCompound write(NBTTagCompound compound) {
+    public CompoundNBT write(CompoundNBT compound) {
         compound.putBoolean("isMerged", isMerged);
         compound.putBoolean("isInitiator", isInitiator);
         compound.putString("dialledAddress", dialledAddress == null ? "" : dialledAddress);
@@ -131,7 +130,7 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
     }
 
     @Override
-    public void read(NBTTagCompound compound) {
+    public void read(CompoundNBT compound) {
         super.read(compound);
         isMerged = compound.getBoolean("isMerged");
         isInitiator = compound.getBoolean("isInitiator");
@@ -157,11 +156,6 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
             inventory.deserializeNBT(compound.getCompound("inventory"));
         }
         distanceFactor = compound.contains("distanceFactor", 6) ? compound.getDouble("distanceFactor") : 1.0;
-    }
-
-    @Override
-    public boolean shouldRenderInPass(int pass) {
-        return pass == 0 || pass == 1;
     }
 
     public double getEnergyToOpen() {
@@ -278,13 +272,14 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
         return false;
     }
 
+    @Nullable
     @Override
-    public SPacketUpdateTileEntity getUpdatePacket() {
-        return new SPacketUpdateTileEntity(pos, 1, write(new NBTTagCompound()));
+    public SUpdateTileEntityPacket getUpdatePacket() {
+        return new SUpdateTileEntityPacket(pos, 1, write(new CompoundNBT() ));
     }
 
     @Override
-    public void onDataPacket(NetworkManager net, SPacketUpdateTileEntity pkt) {
+    public void onDataPacket(NetworkManager net, SUpdateTileEntityPacket pkt) {
         StargateVortexState oldState = this.vortexState;
         read(pkt.getNbtCompound());
 
@@ -298,14 +293,14 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
     }
 
     @Override
-    public NBTTagCompound getUpdateTag() {
-        return write(new NBTTagCompound());
+    public CompoundNBT getUpdateTag() {
+        return write(new CompoundNBT());
     }
 
     public void sync() {
         markDirty();
         if (world != null && !world.isRemote) {
-            IBlockState state = world.getBlockState(pos);
+            BlockState state = world.getBlockState(pos);
             world.notifyBlockUpdate(pos, state, state, 3);
         }
     }
@@ -550,7 +545,7 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
     public void setMerged(boolean merged) {
         if (isMerged != merged) {
             isMerged = merged;
-            EnumFacing facing = getBlockState().get(StargateBaseBlock.FACING);
+            Direction facing = getBlockState().get(StargateBaseBlock.FACING);
 
             if (!world.isRemote) {
                 updateChunkLoading(merged);
@@ -577,10 +572,10 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
 
         float vol = SGCraftRebornConfig.SOUND_VOLUME.get().floatValue();
         for (Entity entity : world.getEntitiesWithinAABB(Entity.class, eventHorizonBox)) {
-            if (entity instanceof EntityPlayerMP) {
-                EntityPlayerMP player = (EntityPlayerMP) entity;
+            if (entity instanceof PlayerEntity) {
+                PlayerEntity player = (PlayerEntity) entity;
                 if (player.isCreative()) {
-                    player.sendStatusMessage(new TextComponentString(TextFormatting.RED + new TextComponentTranslation("stargate.vortex.irisclosed").getString()), true);
+                    player.sendStatusMessage(new StringTextComponent(TextFormatting.RED + new TranslationTextComponent("stargate.vortex.irisclosed").getString()), true);
                 }
                 if (!SGCraftRebornConfig.PRESERVE_INVENTORY.get()) {
                     player.inventory.clear();
@@ -615,16 +610,17 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
         MinecraftServer server = world.getServer();
         if (server == null) return;
 
-        WorldServer targetWorld = server.getWorld(Objects.requireNonNull(DimensionType.getById(connectedLoc.getDimension())));
+        DimensionType dimType = DimensionType.getById(connectedLoc.getDimension());
+        ServerWorld targetWorld = server.forgeGetWorldMap().get(dimType);
         if (targetWorld == null) return;
 
         BlockPos targetBasePos = new BlockPos(connectedLoc.getX(), connectedLoc.getY(), connectedLoc.getZ());
         double destX = targetBasePos.getX() + 0.5, destY = targetBasePos.getY() + 1.0, destZ = targetBasePos.getZ() + 0.5;
         float targetYaw = entity.rotationYaw;
 
-        IBlockState targetState = targetWorld.getBlockState(targetBasePos);
+        BlockState targetState = targetWorld.getBlockState(targetBasePos);
         if (targetState.getBlock() instanceof StargateBaseBlock) {
-            EnumFacing targetFacing = targetState.get(StargateBaseBlock.FACING);
+            Direction targetFacing = targetState.get(StargateBaseBlock.FACING);
             destX += targetFacing.getXOffset() * 1.5;
             destZ += targetFacing.getZOffset() * 1.5;
             targetYaw = targetFacing.getHorizontalAngle();
@@ -632,7 +628,6 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
 
         entity.timeUntilPortal = 40;
         boolean isCrossDimension = (world.getDimension().getType().getId() != connectedLoc.getDimension());
-        DimensionType dimType = targetWorld.getDimension().getType();
 
         final double fX = destX, fY = destY, fZ = destZ;
         final float fYaw = targetYaw, fPitch = entity.rotationPitch;
@@ -642,32 +637,49 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
         double cos = Math.cos(rad);
         double sin = Math.sin(rad);
 
-        final double newMotionX = entity.motionX * cos - entity.motionZ * sin;
-        final double newMotionZ = entity.motionX * sin + entity.motionZ * cos;
-        final double newMotionY = entity.motionY;
+        Vec3d currentMotion = entity.getMotion();
 
-        server.addScheduledTask(() -> {
-            entity.motionX = newMotionX;
-            entity.motionY = newMotionY;
-            entity.motionZ = newMotionZ;
-            entity.velocityChanged = true;
-            if (entity instanceof EntityPlayerMP) {
-                EntityPlayerMP player = (EntityPlayerMP) entity;
-                if (isCrossDimension) player.changeDimension(dimType, new StargateTeleporter(fX, fY, fZ, fYaw, fPitch));
-                else player.connection.setPlayerLocation(fX, fY, fZ, fYaw, fPitch);
+        final double newMotionX = currentMotion.x * cos - currentMotion.z * sin;
+        final double newMotionY = currentMotion.y;
+        final double newMotionZ = currentMotion.x * sin + currentMotion.z * cos;
+
+        final Vec3d newMotion = new Vec3d(newMotionX, newMotionY, newMotionZ);
+
+        server.execute(() -> {
+            if (entity instanceof ServerPlayerEntity) {
+                ServerPlayerEntity player = (ServerPlayerEntity) entity;
+                if (isCrossDimension) {
+                    player.func_200619_a(targetWorld, fX, fY, fZ, fYaw, fPitch);
+                } else {
+                    player.connection.setPlayerLocation(fX, fY, fZ, fYaw, fPitch);
+                }
+                player.setMotion(newMotion);
+                player.velocityChanged = true;
             } else {
-                if (isCrossDimension) entity.changeDimension(dimType, new StargateTeleporter(fX, fY, fZ, fYaw, fPitch));
-                else entity.setLocationAndAngles(fX, fY, fZ, fYaw, fPitch);
+                if (isCrossDimension) {
+                    Entity newEntity = entity.getType().create(targetWorld);
+                    if (newEntity != null) {
+                        newEntity.copyDataFromOld(entity);
+                        newEntity.setLocationAndAngles(fX, fY, fZ, fYaw, fPitch);
+                        newEntity.setMotion(newMotion);
+                        targetWorld.addEntity(newEntity);
+                        entity.remove();
+                    }
+                } else {
+                    entity.setLocationAndAngles(fX, fY, fZ, fYaw, fPitch);
+                    entity.setMotion(newMotion);
+                    entity.velocityChanged = true;
+                }
             }
         });
     }
 
     private AxisAlignedBB getEventHorizonBoundingBox() {
-        EnumFacing facing = world.getBlockState(pos).get(StargateBaseBlock.FACING);
+        Direction facing = world.getBlockState(pos).get(StargateBaseBlock.FACING);
         double x = pos.getX(), y = pos.getY(), z = pos.getZ();
         double minY = y + 1.0, maxY = y + 4.0;
 
-        return facing.getAxis() == EnumFacing.Axis.Z
+        return facing.getAxis() == Direction.Axis.Z
                 ? new AxisAlignedBB(x - 1.0, minY, z + 0.4, x + 2.0, maxY, z + 0.6)
                 : new AxisAlignedBB(x + 0.4, minY, z - 1.0, x + 0.6, maxY, z + 2.0);
     }
@@ -677,7 +689,8 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
         ExtendedPos remotePos = StargateWorldData.findStargateUniversally(world.getServer(), targetAddress);
 
         if (remotePos != null) {
-            WorldServer targetWorld = world.getServer().getWorld(DimensionType.getById(remotePos.getDimension()));
+            DimensionType dimType = DimensionType.getById(remotePos.getDimension());
+            ServerWorld targetWorld = world.getServer().forgeGetWorldMap().get(dimType);
             if (targetWorld != null) {
                 TileEntity te = targetWorld.getTileEntity(new BlockPos(remotePos.getX(), remotePos.getY(), remotePos.getZ()));
                 if (te instanceof StargateBaseTileEntity) return (StargateBaseTileEntity) te;
@@ -719,13 +732,15 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
     }
 
     private void updateChunkLoading(boolean load) {
-        if (world == null || world.isRemote || !(world instanceof WorldServer)) return;
+        if (world == null || world.isRemote || !(world instanceof ServerWorld)) {
+            return;
+        }
         ChunkPos centerPos = new ChunkPos(pos);
         int range = SGCraftRebornConfig.CHUNK_LOADING_RANGE.get();
 
         for (int x = -range; x <= range; x++) {
             for (int z = -range; z <= range; z++) {
-                world.setChunkForced(centerPos.x + x, centerPos.z + z, load);
+                ((ServerWorld) world).forceChunk(centerPos.x + x, centerPos.z + z, load);
             }
         }
     }
@@ -836,30 +851,9 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
         this.hasIrisUpgrade = hasIrisUpgrade; sync();
     }
 
+    @Nonnull
     @Override
-    public Container createContainer(InventoryPlayer playerInventory, EntityPlayer playerIn) {
-        return new StargateBaseCamouflageContainer(playerInventory, pos);
-    }
-
-    @Override
-    public String getGuiID() {
-        return Constants.MOD_ID + ":base_camouflage";
-    }
-
-    @Override
-    public ITextComponent getName() {
-        return new TextComponentTranslation("container.sgcraftreborn.base");
-    }
-
-    @Override
-    public boolean hasCustomName() {
-        return false;
-    }
-
-    @Nullable @Override public ITextComponent getCustomName() { return null; }
-
-    @Nonnull @Override
-    public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable EnumFacing side) {
+    public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable Direction side) {
         if (cap == CapabilityItemHandler.ITEM_HANDLER_CAPABILITY) return inventoryHolder.cast();
         return super.getCapability(cap, side);
     }
@@ -879,7 +873,7 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
         AxisAlignedBB box = getKawooshBoundingBox();
         List<Entity> entities = world.getEntitiesWithinAABB(Entity.class, box);
 
-        EnumFacing facing = world.getBlockState(pos).get(StargateBaseBlock.FACING);
+        Direction facing = world.getBlockState(pos).get(StargateBaseBlock.FACING);
 
         double gateX = pos.getX() + 0.5;
         double gateY = pos.getY() + 2.5;
@@ -896,16 +890,16 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
 
         for (Entity entity : entities) {
             double eX = entity.posX;
-            double eY = entity.posY + (entity.height / 2.0);
+            double eY = entity.posY + (entity.stepHeight / 2.0);
             double eZ = entity.posZ;
 
             double distanceAlongAxis = 0.0;
             double distanceFromAxis = 0.0;
 
-            if (facing.getAxis() == EnumFacing.Axis.Z) {
+            if (facing.getAxis() == Direction.Axis.Z) {
                 distanceAlongAxis = Math.abs(eZ - gateZ);
                 distanceFromAxis = Math.sqrt(Math.pow(eX - gateX, 2) + Math.pow(eY - gateY, 2));
-            } else if (facing.getAxis() == EnumFacing.Axis.X) {
+            } else if (facing.getAxis() == Direction.Axis.X) {
                 distanceAlongAxis = Math.abs(eX - gateX);
                 distanceFromAxis = Math.sqrt(Math.pow(eZ - gateZ, 2) + Math.pow(eY - gateY, 2));
             } else {
@@ -922,7 +916,7 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
     }
 
     private AxisAlignedBB getKawooshBoundingBox() {
-        EnumFacing facing = world.getBlockState(pos).get(StargateBaseBlock.FACING);
+        Direction facing = world.getBlockState(pos).get(StargateBaseBlock.FACING);
 
         double x = pos.getX() + 0.5;
         double y = pos.getY() + 2.5;
@@ -934,9 +928,9 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
         double minY = y - r, maxY = y + r;
         double minZ = z - r, maxZ = z + r;
 
-        if (facing.getAxis() == EnumFacing.Axis.Z) {
+        if (facing.getAxis() == Direction.Axis.Z) {
             minZ = z - 0.5; maxZ = z + 0.5;
-        } else if (facing.getAxis() == EnumFacing.Axis.X) {
+        } else if (facing.getAxis() == Direction.Axis.X) {
             minX = x - 0.5; maxX = x + 0.5;
         } else {
             minY = y - 0.5; maxY = y + 0.5;
@@ -1041,8 +1035,13 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
             ItemStack stack = inventory.getStackInSlot(i);
             if (!stack.isEmpty()) {
                 Block block = Block.getBlockFromItem(stack.getItem());
-                if (block instanceof BlockSlab) level = Math.max(level, 1);
-                else if (block.getDefaultState().isFullCube()) level = Math.max(level, 2);
+
+                if (block instanceof SlabBlock) {
+                    level = Math.max(level, 1);
+                }
+                else if (block.getDefaultState().getMaterial().isSolid()) {
+                    level = Math.max(level, 2);
+                }
             }
         }
         return level;
@@ -1057,7 +1056,7 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
     private List<RFPowerUnitTileEntity> getPowerUnits() {
         List<RFPowerUnitTileEntity> units = new ArrayList<>();
 
-        for (EnumFacing facing : EnumFacing.values()) {
+        for (Direction facing : Direction.values()) {
             TileEntity te = world.getTileEntity(pos.offset(facing));
             if (te instanceof RFPowerUnitTileEntity && !units.contains(te)) {
                 units.add((RFPowerUnitTileEntity) te);
@@ -1065,8 +1064,8 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
         }
 
         if (world.getBlockState(pos).getBlock() instanceof StargateBaseBlock) {
-            EnumFacing facing = world.getBlockState(pos).get(StargateBaseBlock.FACING);
-            EnumFacing right = facing.rotateY();
+            Direction facing = world.getBlockState(pos).get(StargateBaseBlock.FACING);
+            Direction right = facing.rotateY();
 
             for (int i = -2; i <= 2; i++) {
                 BlockPos underPos = pos.offset(right, i).down();
@@ -1078,7 +1077,7 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
         }
 
         if (controllerPos != null) {
-            for (EnumFacing facing : EnumFacing.values()) {
+            for (Direction facing : Direction.values()) {
                 TileEntity te = world.getTileEntity(controllerPos.offset(facing));
                 if (te instanceof RFPowerUnitTileEntity && !units.contains(te)) {
                     units.add((RFPowerUnitTileEntity) te);
@@ -1114,4 +1113,14 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
         }
     }
 
+    @Override
+    public ITextComponent getDisplayName() {
+        return new TranslationTextComponent("container.sgcraftreborn.base");
+    }
+
+    @Nullable
+    @Override
+    public Container createMenu(int i, PlayerInventory playerInventory, PlayerEntity playerEntity) {
+        return new StargateBaseCamouflageContainer(i, playerInventory, pos);
+    }
 }

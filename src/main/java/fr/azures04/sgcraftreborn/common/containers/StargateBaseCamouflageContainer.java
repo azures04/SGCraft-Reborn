@@ -1,12 +1,13 @@
 package fr.azures04.sgcraftreborn.common.containers;
 
 import fr.azures04.sgcraftreborn.common.containers.slots.CamouflageSlot;
+import fr.azures04.sgcraftreborn.common.registries.ModContainers;
 import fr.azures04.sgcraftreborn.common.registries.tiles.StargateBaseTileEntity;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.InventoryPlayer;
-import net.minecraft.inventory.Container;
-import net.minecraft.inventory.Slot;
-import net.minecraft.item.ItemBlock;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.inventory.container.Container;
+import net.minecraft.inventory.container.Slot;
+import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.items.CapabilityItemHandler;
@@ -14,11 +15,12 @@ import net.minecraftforge.items.IItemHandler;
 
 public class StargateBaseCamouflageContainer extends Container {
 
-    public final StargateBaseTileEntity te;
+    public final StargateBaseTileEntity base;
 
-    public StargateBaseCamouflageContainer(InventoryPlayer playerInv, BlockPos pos) {
-        this.te = (StargateBaseTileEntity) playerInv.player.world.getTileEntity(pos);
-        IItemHandler inventory = te.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY).orElseThrow(RuntimeException::new);
+    public StargateBaseCamouflageContainer(int windowId, PlayerInventory playerInv, BlockPos pos) {
+        super(ModContainers.BASE_CAMOUFLAGE, windowId);
+        this.base = (StargateBaseTileEntity) playerInv.player.world.getTileEntity(pos);
+        IItemHandler inventory = base.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY).orElseThrow(RuntimeException::new);
 
         for (int i = 0; i < 5; i++) {
             this.addSlot(new CamouflageSlot(inventory, i, 48 + (i * 18), 104));
@@ -40,12 +42,16 @@ public class StargateBaseCamouflageContainer extends Container {
     }
 
     @Override
-    public boolean canInteractWith(EntityPlayer playerIn) {
-        return playerIn.getDistanceSq(te.getPos()) <= 64.0D;
+    public boolean canInteractWith(PlayerEntity playerIn) {
+        return playerIn.getDistanceSq(
+            base.getPos().getX() + 0.5D,
+            base.getPos().getY() + 0.5D,
+            base.getPos().getZ() + 0.5D
+        ) <= 64.0D;
     }
 
     @Override
-    public ItemStack transferStackInSlot(EntityPlayer playerIn, int index) {
+    public ItemStack transferStackInSlot(PlayerEntity playerIn, int index) {
         ItemStack itemstack = ItemStack.EMPTY;
         Slot slot = this.inventorySlots.get(index);
 
@@ -56,7 +62,7 @@ public class StargateBaseCamouflageContainer extends Container {
             if (index < 5) {
                 if (!this.mergeItemStack(stackInSlot, 5, 41, true)) return ItemStack.EMPTY;
             } else {
-                if (stackInSlot.getItem() instanceof ItemBlock) {
+                if (stackInSlot.getItem() instanceof BlockItem) {
                     if (!this.mergeItemStack(stackInSlot, 0, 5, false)) return ItemStack.EMPTY;
                 } else {
                     return ItemStack.EMPTY;

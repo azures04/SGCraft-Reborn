@@ -6,7 +6,7 @@ import dan200.computercraft.api.peripheral.IPeripheralProvider;
 import fr.azures04.sgcraftreborn.common.registries.tiles.ComputerCraftInterfaceTileEntity;
 import fr.azures04.sgcraftreborn.common.registries.tiles.StargateBaseTileEntity;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
@@ -15,9 +15,13 @@ import javax.annotation.Nullable;
 
 public class CCTPeripheralProvider implements IPeripheralProvider {
 
+    public static void register() {
+        ComputerCraftAPI.registerPeripheralProvider(new CCTPeripheralProvider());
+    }
+
     @Nullable
     @Override
-    public IPeripheral getPeripheral(@Nonnull World world, @Nonnull BlockPos pos, @Nonnull EnumFacing side) {
+    public IPeripheral getPeripheral(@Nonnull World world, @Nonnull BlockPos pos, @Nonnull Direction side) {
         TileEntity tileEntity = world.getTileEntity(pos);
 
         if (tileEntity instanceof ComputerCraftInterfaceTileEntity) {
@@ -36,9 +40,5 @@ public class CCTPeripheralProvider implements IPeripheralProvider {
             }
         }
         return null;
-    }
-
-    public static void register() {
-        ComputerCraftAPI.registerPeripheralProvider(new CCTPeripheralProvider());
     }
 }

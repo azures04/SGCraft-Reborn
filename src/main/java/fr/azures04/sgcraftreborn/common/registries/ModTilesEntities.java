@@ -7,6 +7,7 @@ import fr.azures04.sgcraftreborn.common.registries.tiles.StargateBaseTileEntity;
 import fr.azures04.sgcraftreborn.common.registries.tiles.StargateControllerTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityType;
+import net.minecraftforge.fml.ModList;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,9 +29,11 @@ public class ModTilesEntities {
     }
 
     static {
-        STARGATE_BASE_BLOCK = register("stargate_base", TileEntityType.Builder.create(StargateBaseTileEntity::new));
-        STARGATE_CONTROLLER_BLOCK = register("stargate_controller", TileEntityType.Builder.create(StargateControllerTileEntity::new));
-        RF_POWER_UNIT_BLOCK = register("rf_power_unit", TileEntityType.Builder.create(RFPowerUnitTileEntity::new));
-        COMPUTER_CRAFT_INTERFACE_BLOCK = register("computer_craft_interface", TileEntityType.Builder.create(ComputerCraftInterfaceTileEntity::new));
+        STARGATE_BASE_BLOCK = register("stargate_base", TileEntityType.Builder.create(StargateBaseTileEntity::new, ModBlocks.STARGATE_BASE));
+        STARGATE_CONTROLLER_BLOCK = register("stargate_controller", TileEntityType.Builder.create(StargateControllerTileEntity::new, ModBlocks.STARGATE_CONTROLLER));
+        RF_POWER_UNIT_BLOCK = register("rf_power_unit", TileEntityType.Builder.create(RFPowerUnitTileEntity::new, ModBlocks.RF_POWER_UNIT));
+        if (ModList.get().isLoaded("computercraft")) {
+            COMPUTER_CRAFT_INTERFACE_BLOCK = register("computer_craft_interface", TileEntityType.Builder.create(ComputerCraftInterfaceTileEntity::new, ModBlocks.CC_INTERFACE));
+        }
     }
 }
