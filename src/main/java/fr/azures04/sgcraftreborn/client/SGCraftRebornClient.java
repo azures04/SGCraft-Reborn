@@ -18,7 +18,7 @@ public class SGCraftRebornClient {
     private static void clientSetup(final FMLClientSetupEvent event) {
         ClientRegistry.bindTileEntitySpecialRenderer(StargateControllerTileEntity.class, new StargateControllerTileEntityRenderer());
         ClientRegistry.bindTileEntitySpecialRenderer(StargateBaseTileEntity.class, new StargateBaseTileEntityRenderer());
-        ModScreens.registerScreens();
+        ModScreens.registerContainerScreens();
     }
 
 }

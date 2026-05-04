@@ -10,10 +10,15 @@ import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityType;
+import net.minecraft.util.Direction;
 import net.minecraft.util.text.ITextComponent;;
 import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.energy.CapabilityEnergy;
 import net.minecraftforge.energy.EnergyStorage;
+
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public class RFPowerUnitTileEntity extends TileEntity implements ITickableTileEntity, INamedContainerProvider {
@@ -88,6 +93,15 @@ public class RFPowerUnitTileEntity extends TileEntity implements ITickableTileEn
     @Override
     public Container createMenu(int i, PlayerInventory playerInventory, PlayerEntity playerEntity) {
         return new RFPowerUnitContainer(i, playerInventory, pos);
+    }
+
+    @Nonnull
+    @Override
+    public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable Direction side) {
+        if (cap == CapabilityEnergy.ENERGY) {
+            return energyHolder.cast();
+        }
+        return super.getCapability(cap, side);
     }
 
 }

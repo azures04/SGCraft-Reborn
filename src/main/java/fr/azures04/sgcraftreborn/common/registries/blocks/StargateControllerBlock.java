@@ -1,16 +1,13 @@
 package fr.azures04.sgcraftreborn.common.registries.blocks;
 
 import fr.azures04.sgcraftreborn.client.models.ISpecialItemRenderer;
-import fr.azures04.sgcraftreborn.client.screens.StargateControllerScreen;
 import fr.azures04.sgcraftreborn.common.registries.blocks.states.StargateControllerStatus;
 import fr.azures04.sgcraftreborn.common.registries.tiles.StargateBaseTileEntity;
 import fr.azures04.sgcraftreborn.common.registries.tiles.StargateControllerTileEntity;
 import fr.azures04.sgcraftreborn.common.util.math.ExtendedPos;
 import java.util.concurrent.Callable;
 import javax.annotation.Nullable;
-
 import net.minecraft.block.*;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.tileentity.ItemStackTileEntityRenderer;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
@@ -96,10 +93,10 @@ public class StargateControllerBlock extends Block implements ISpecialItemRender
             TileEntity baseTe = worldIn.getTileEntity(linkedPos);
             boolean hasChevron = (baseTe instanceof StargateBaseTileEntity) && ((StargateBaseTileEntity) baseTe).hasChevronUpgrade();
 
-            DistExecutor.runWhenOn(Dist.CLIENT, () -> () -> {
+            DistExecutor.runWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> {
                 ExtendedPos exPos = new ExtendedPos(pos, worldIn.dimension.getType().getId());
-                StargateControllerStatus status = (StargateControllerStatus) state.get(STATUS);
-                Minecraft.getInstance().displayGuiScreen(new StargateControllerScreen(new StringTextComponent(""), exPos, status, hasChevron));
+                StargateControllerStatus status = state.get(STATUS);
+                fr.azures04.sgcraftreborn.client.registries.ModScreens.open("controller_main", exPos, status, hasChevron);
             });
             return true;
         } else {

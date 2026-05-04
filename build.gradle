@@ -22,7 +22,7 @@ minecraft {
     mappings channel: "stable", version: "58-1.14.4"
     runs {
         client {
-            workingDirectory project.file("run")
+            workingDirectory project.file("run/client")
             property "forge.logging.markers", "SCAN,REGISTRIES,REGISTRYDUMP"
             property "forge.logging.console.level", "debug"
 
@@ -34,9 +34,10 @@ minecraft {
         }
 
         server {
-            workingDirectory project.file("run")
+            workingDirectory project.file("run/server")
             property "forge.logging.markers", "SCAN,REGISTRIES,REGISTRYDUMP"
             property "forge.logging.console.level", "debug"
+            args "nogui"
 
             mods {
                 sgcraftreborn {
