@@ -52,12 +52,12 @@ public class CCTPeripheral extends StargateAbstractAPI implements IPeripheral {
             case 0:
                 return super.getStargateState();
             case 1:
-                return super.getEnergyAvailable();
+                return context.executeMainThreadTask(super::getEnergyAvailable);
             case 2:
                 if (args.length < 1 || !(args[0] instanceof String)) {
                     throw new LuaException("Expected string argument for address");
                 }
-                return super.getEnergyToDial((String) args[0]);
+                return context.executeMainThreadTask(() -> super.getEnergyToDial((String) args[0]));
             case 3:
                 return super.getLocalAddress();
             case 4:

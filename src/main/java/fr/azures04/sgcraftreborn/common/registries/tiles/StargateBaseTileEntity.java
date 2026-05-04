@@ -1,5 +1,6 @@
 package fr.azures04.sgcraftreborn.common.registries.tiles;
 
+import fr.azures04.sgcraftreborn.SGCraftReborn;
 import fr.azures04.sgcraftreborn.common.api.StargateAbstractAPI;
 import fr.azures04.sgcraftreborn.common.config.SGCraftRebornConfig;
 import fr.azures04.sgcraftreborn.common.containers.StargateBaseCamouflageContainer;
@@ -47,6 +48,8 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
+import org.apache.logging.log4j.Level;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
@@ -588,14 +591,24 @@ public class StargateBaseTileEntity extends TileEntity implements ITickableTileE
 
     private void handleEntityTeleportation() {
         if (connectedLoc == null) return;
+        if (SGCraftRebornConfig.ONE_WAY_TRAVEL.get() && !isInitiator) return;
 
-        if (SGCraftRebornConfig.ONE_WAY_TRAVEL.get() && !isInitiator) {
-            return;
-        }
+        MinecraftServer server = world.getServer();
+        if (server == null) return;
 
-        StargateBaseTileEntity remoteGate = getRemoteGate(dialledAddress);
+        DimensionType dimType = DimensionType.getById(connectedLoc.getDimension());
+        ServerWorld targetWorld = server.func_71218_a(dimType);
 
-        if (remoteGate == null || remoteGate.getIrisState() != StargateIrisState.OPEN) {
+        if (targetWorld != null && targetWorld.isBlockLoaded(connectedLoc.getPos())) {
+            TileEntity te = targetWorld.getTileEntity(connectedLoc.getPos());
+            if (te instanceof StargateBaseTileEntity) {
+                StargateBaseTileEntity remoteGate = (StargateBaseTileEntity) te;
+                if (remoteGate.getIrisState() != StargateIrisState.OPEN) {
+                    handleEntityVaporization();
+                    return;
+                }
+            }
+        } else {
             handleEntityVaporization();
             return;
         }
@@ -611,7 +624,7 @@ public class StargateBaseTileEntity extends TileEntity implements ITickableTileE
         if (server == null) return;
 
         DimensionType dimType = DimensionType.getById(connectedLoc.getDimension());
-        ServerWorld targetWorld = server.forgeGetWorldMap().get(dimType);
+        ServerWorld targetWorld = server.func_71218_a(dimType);
         if (targetWorld == null) return;
 
         BlockPos targetBasePos = new BlockPos(connectedLoc.getX(), connectedLoc.getY(), connectedLoc.getZ());
@@ -686,14 +699,24 @@ public class StargateBaseTileEntity extends TileEntity implements ITickableTileE
 
     public StargateBaseTileEntity getRemoteGate(String targetAddress) {
         if (targetAddress == null || targetAddress.isEmpty() || world.getServer() == null) return null;
-        ExtendedPos remotePos = StargateWorldData.findStargateUniversally(world.getServer(), targetAddress);
+
+        ExtendedPos remotePos;
+        if (targetAddress.length() == 9) {
+            remotePos = StargateWorldData.findStargateUniversally(world.getServer(), targetAddress);
+        } else {
+            remotePos = StargateWorldData.get(world).findStargate(targetAddress);
+        }
 
         if (remotePos != null) {
             DimensionType dimType = DimensionType.getById(remotePos.getDimension());
-            ServerWorld targetWorld = world.getServer().forgeGetWorldMap().get(dimType);
+            ServerWorld targetWorld = world.getServer().func_71218_a(dimType);
+
             if (targetWorld != null) {
-                TileEntity te = targetWorld.getTileEntity(new BlockPos(remotePos.getX(), remotePos.getY(), remotePos.getZ()));
-                if (te instanceof StargateBaseTileEntity) return (StargateBaseTileEntity) te;
+                BlockPos rPos = remotePos.getPos();
+                if (targetWorld.isBlockLoaded(rPos)) {
+                    TileEntity te = targetWorld.getTileEntity(rPos);
+                    if (te instanceof StargateBaseTileEntity) return (StargateBaseTileEntity) te;
+                }
             }
         }
         return null;
@@ -1097,9 +1120,19 @@ public class StargateBaseTileEntity extends TileEntity implements ITickableTileE
     }
 
     public void fireComputerEvent(String eventName, Object... args) {
+        Object[] formattedArgs = new Object[args.length];
+
+        for (int i = 0; i < args.length; i++) {
+            if (args[i] instanceof Enum) {
+                formattedArgs[i] = ((Enum<?>) args[i]).name();
+            } else {
+                formattedArgs[i] = args[i];
+            }
+        }
+
         for (StargateAbstractAPI adapter : computerAdapters) {
             if (adapter != null) {
-                adapter.queueEvent(eventName, args);
+                adapter.queueEvent(eventName, formattedArgs);
             }
         }
     }

@@ -7,6 +7,8 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.inventory.container.INamedContainerProvider;
 import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.network.NetworkManager;
+import net.minecraft.network.play.server.SUpdateTileEntityPacket;
 import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityType;
@@ -23,7 +25,7 @@ import javax.annotation.Nullable;
 
 public class RFPowerUnitTileEntity extends TileEntity implements ITickableTileEntity, INamedContainerProvider {
 
-    private final EnergyStorage energyStorage = new EnergyStorage(4000000);
+    private final EnergyStorage energyStorage = new EnergyStorage(4000000, 4000000, 4000000);
     private final LazyOptional<EnergyStorage> energyHolder = LazyOptional.of(() -> energyStorage);
     private int lastEnergy = 0;
     private static final double FE_PER_SGPU = 80.0;
@@ -43,6 +45,7 @@ public class RFPowerUnitTileEntity extends TileEntity implements ITickableTileEn
             if (currentEnergy != lastEnergy) {
                 lastEnergy = currentEnergy;
                 markDirty();
+
             }
         }
     }
@@ -104,4 +107,28 @@ public class RFPowerUnitTileEntity extends TileEntity implements ITickableTileEn
         return super.getCapability(cap, side);
     }
 
+    @Nullable
+    @Override
+    public SUpdateTileEntityPacket getUpdatePacket() {
+        CompoundNBT nbt = new CompoundNBT();
+        this.write(nbt);
+        return new SUpdateTileEntityPacket(this.pos, 1, nbt);
+    }
+
+    @Override
+    public void onDataPacket(NetworkManager net, SUpdateTileEntityPacket pkt) {
+        this.read(pkt.getNbtCompound());
+    }
+
+    @Override
+    public CompoundNBT getUpdateTag() {
+        return write(new CompoundNBT());
+    }
+
+    @Override
+    public void onLoad() {
+        if (world != null && !world.isRemote) {
+            world.notifyNeighborsOfStateChange(pos, getBlockState().getBlock());
+        }
+    }
 }
