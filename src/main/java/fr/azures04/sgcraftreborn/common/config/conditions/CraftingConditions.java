@@ -21,7 +21,6 @@ public class CraftingConditions implements ICondition {
         return ID;
     }
 
-    // C'est ici que la vérification de ta configuration se fait
     @Override
     public boolean test() {
         switch (key) {
