@@ -48,8 +48,6 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
-import org.apache.logging.log4j.Level;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
@@ -58,10 +56,11 @@ import java.util.concurrent.ConcurrentHashMap;
 public class StargateBaseTileEntity extends TileEntity implements ITickableTileEntity, INamedContainerProvider {
 
     private transient Set<StargateAbstractAPI> computerAdapters = ConcurrentHashMap.newKeySet();
+    private transient List<RFPowerUnitTileEntity> cachedPowerUnits = new ArrayList<>();
 
     private static final float[][] CHEVRON_ANGLES = {
-            { 45f, 45f, 40f },
-            { 36f, 33f, 30f }
+        { 45f, 45f, 40f },
+        { 36f, 33f, 30f }
     };
 
     static final float vol = SGCraftRebornConfig.SOUND_VOLUME.get().floatValue();
@@ -237,7 +236,7 @@ public class StargateBaseTileEntity extends TileEntity implements ITickableTileE
             }
         }
 
-        List<RFPowerUnitTileEntity> powerUnits = getPowerUnits();
+        List<RFPowerUnitTileEntity> powerUnits = getValidPowerUnits();
         for (RFPowerUnitTileEntity powerUnit : powerUnits) {
             energyAvailable += powerUnit.getAvailableSGEnergy();
         }
@@ -410,8 +409,8 @@ public class StargateBaseTileEntity extends TileEntity implements ITickableTileE
 
             case ACTIVE:
                 if (timeout > 0) {
-                    if (isInitiator) {
-                        if (!useEnergy(getEnergyUsePerTick() * distanceFactor)) {
+                    if (world.getGameTime() % 20 == 0) {
+                        if (isInitiator && !useEnergy(getEnergyUsePerTick() * 20 * distanceFactor)) {
                             disconnect();
                             break;
                         }
@@ -419,6 +418,9 @@ public class StargateBaseTileEntity extends TileEntity implements ITickableTileE
 
                     timeout--;
                     if (irisState == StargateIrisState.OPEN) {
+                        if (this.connectedLoc == null && dialledAddress != null) {
+                            this.connectedLoc = getRemoteGate(dialledAddress).getExtendedPos();
+                        }
                         handleEntityTeleportation();
                     } else if (irisState == StargateIrisState.CLOSED) {
                         handleEntityVaporization();
@@ -1137,6 +1139,16 @@ public class StargateBaseTileEntity extends TileEntity implements ITickableTileE
         }
     }
 
+    public void registerPowerUnit(RFPowerUnitTileEntity unit) {
+        if (!cachedPowerUnits.contains(unit)) {
+            cachedPowerUnits.add(unit);
+        }
+    }
+
+    public void unregisterPowerUnit(RFPowerUnitTileEntity unit) {
+        cachedPowerUnits.remove(unit);
+    }
+
     public void sendMessageAcrossVortex(Object... messageArgs) {
         if (vortexState == StargateVortexState.ACTIVE && connectedLoc != null) {
             StargateBaseTileEntity remoteGate = getRemoteGate(dialledAddress);
@@ -1155,5 +1167,10 @@ public class StargateBaseTileEntity extends TileEntity implements ITickableTileE
     @Override
     public Container createMenu(int i, PlayerInventory playerInventory, PlayerEntity playerEntity) {
         return new StargateBaseCamouflageContainer(i, playerInventory, pos);
+    }
+
+    private List<RFPowerUnitTileEntity> getValidPowerUnits() {
+        cachedPowerUnits.removeIf(TileEntity::isRemoved);
+        return cachedPowerUnits;
     }
 }

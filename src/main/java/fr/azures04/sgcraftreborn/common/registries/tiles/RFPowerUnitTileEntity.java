@@ -2,6 +2,7 @@ package fr.azures04.sgcraftreborn.common.registries.tiles;
 
 import fr.azures04.sgcraftreborn.common.containers.RFPowerUnitContainer;
 import fr.azures04.sgcraftreborn.common.registries.ModTilesEntities;
+import fr.azures04.sgcraftreborn.common.util.math.Stargates;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.container.Container;
@@ -127,8 +128,18 @@ public class RFPowerUnitTileEntity extends TileEntity implements ITickableTileEn
 
     @Override
     public void onLoad() {
-        if (world != null && !world.isRemote) {
-            world.notifyNeighborsOfStateChange(pos, getBlockState().getBlock());
+        if (!world.isRemote) {
+            StargateBaseTileEntity gate = Stargates.searchNearbyStargate(world, pos);
+            if (gate != null) gate.registerPowerUnit(this);
         }
+    }
+
+    @Override
+    public void remove() {
+        if (!world.isRemote) {
+            StargateBaseTileEntity gate = Stargates.searchNearbyStargate(world, pos);
+            if (gate != null) gate.unregisterPowerUnit(this);
+        }
+        super.remove();
     }
 }
