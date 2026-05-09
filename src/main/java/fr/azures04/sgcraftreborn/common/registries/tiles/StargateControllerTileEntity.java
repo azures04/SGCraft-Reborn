@@ -9,6 +9,7 @@ import fr.azures04.sgcraftreborn.common.registries.blocks.StargateBaseBlock;
 import fr.azures04.sgcraftreborn.common.registries.blocks.StargateControllerBlock;
 import fr.azures04.sgcraftreborn.common.registries.blocks.states.StargateControllerStatus;
 import fr.azures04.sgcraftreborn.common.registries.tiles.states.StargateVortexState;
+import fr.azures04.sgcraftreborn.common.util.math.Stargates;
 import fr.azures04.sgcraftreborn.common.world.StargateAddressing;
 import fr.azures04.sgcraftreborn.common.world.data.StargateWorldData;
 import fr.azures04.sgcraftreborn.common.util.math.ExtendedPos;
@@ -80,26 +81,6 @@ public class StargateControllerTileEntity extends TileEntity implements IInterac
         sync();
     }
 
-    private StargateBaseTileEntity searchNearbyStargate(World world) {
-        AxisAlignedBB box = new AxisAlignedBB(pos).grow(
-                SGCraftRebornConfig.LINK_RANGE_X.get(),
-                SGCraftRebornConfig.LINK_RANGE_Y.get(),
-                SGCraftRebornConfig.LINK_RANGE_Z.get()
-        );
-
-        for (BlockPos checkPos : BlockPos.getAllInBoxMutable(
-                (int)box.minX, (int)box.minY, (int)box.minZ,
-                (int)box.maxX, (int)box.maxY, (int)box.maxZ)) {
-
-            TileEntity te = world.getTileEntity(checkPos);
-            if (te instanceof StargateBaseTileEntity) {
-                StargateBaseTileEntity gate = (StargateBaseTileEntity) te;
-                if (gate.isMerged()) return gate;
-            }
-        }
-        return null;
-    }
-
     private boolean linkToStargate(StargateBaseTileEntity gate, World world) {
         ExtendedPos thisExtendedPos = new ExtendedPos(this.pos, world.getDimension().getType().getId());
         if (gate.getControllerPos() != null && !gate.getControllerPos().equals(thisExtendedPos)) {
@@ -133,7 +114,7 @@ public class StargateControllerTileEntity extends TileEntity implements IInterac
             unlink();
         }
 
-        StargateBaseTileEntity gate = searchNearbyStargate(world);
+        StargateBaseTileEntity gate = Stargates.searchNearbyStargate(world, pos);
         if (gate != null) {
             if (!linkToStargate(gate, world)) {
                 return null;

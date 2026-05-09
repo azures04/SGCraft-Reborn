@@ -12,11 +12,13 @@ import net.minecraft.world.storage.WorldSavedDataStorage;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 public class StargateWorldData extends WorldSavedData {
 
     public static final String NAME = "sgcraftreborn_stargates";
-    private Map<String, ExtendedPos> stargates = new HashMap<>();
+    private Map<String, ExtendedPos> stargates = new TreeMap<>();
 
     public StargateWorldData() {
         super(NAME);
@@ -84,13 +86,7 @@ public class StargateWorldData extends WorldSavedData {
         if (stargates.containsKey(address)) {
             return true;
         }
-
-        for (String storedAddress : stargates.keySet()) {
-            if (storedAddress.startsWith(address)) {
-                return true;
-            }
-        }
-        return false;
+        return !((TreeMap<String, ExtendedPos>) stargates).subMap(address, address + "\uffff").isEmpty();
     }
 
     public ExtendedPos findStargate(String address) {
@@ -98,10 +94,9 @@ public class StargateWorldData extends WorldSavedData {
             return stargates.get(address);
         }
 
-        for (Map.Entry<String, ExtendedPos> entry : stargates.entrySet()) {
-            if (entry.getKey().startsWith(address)) {
-                return entry.getValue();
-            }
+        SortedMap<String, ExtendedPos> results = ((TreeMap<String, ExtendedPos>) stargates).subMap(address, address + "\uffff");
+        if (!results.isEmpty()) {
+            return results.get(results.firstKey());
         }
         return null;
     }

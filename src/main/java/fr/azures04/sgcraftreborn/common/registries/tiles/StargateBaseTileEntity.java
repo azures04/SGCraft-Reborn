@@ -17,6 +17,8 @@ import fr.azures04.sgcraftreborn.common.world.data.StargateWorldData;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockSlab;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -56,10 +58,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public class StargateBaseTileEntity extends TileEntity implements ITickable, IInteractionObject {
 
     private transient Set<StargateAbstractAPI> computerAdapters = ConcurrentHashMap.newKeySet();
+    private transient Set<RFPowerUnitTileEntity> powerUnitCache = ConcurrentHashMap.newKeySet();
+    private transient StargateBaseTileEntity remoteGateCache;
 
     private static final float[][] CHEVRON_ANGLES = {
-            { 45f, 45f, 40f },
-            { 36f, 33f, 30f }
+        { 45f, 45f, 40f },
+        { 36f, 33f, 30f }
     };
 
     static final float vol = SGCraftRebornConfig.SOUND_VOLUME.get().floatValue();
@@ -339,8 +343,12 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
             if (irisPhase > targetPhase) irisPhase--;
 
             if (vortexState == StargateVortexState.ACTIVE || vortexState == StargateVortexState.OPENING || vortexState == StargateVortexState.CLOSING) {
-                applyRandomImpulse();
-                updateEventHorizon();
+                EntityPlayerSP localPlayer = Minecraft.getInstance().player;
+
+                if (localPlayer != null && localPlayer.getDistanceSq(pos) < 4096.0) {
+                    applyRandomImpulse();
+                    updateEventHorizon();
+                }
             }
             return;
         }
@@ -417,6 +425,10 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
                             disconnect();
                             break;
                         }
+                    }
+
+                    if (remoteGateCache == null || remoteGateCache.isRemoved()) {
+                        remoteGateCache = getRemoteGate(dialledAddress);
                     }
 
                     timeout--;
@@ -516,6 +528,7 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
         isInitiator = false;
         numEngagedChevrons = 0;
         timeout = 0;
+        remoteGateCache = null;
 
         updateControllerBlockState();
         sync();
@@ -598,9 +611,11 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
             return;
         }
 
-        StargateBaseTileEntity remoteGate = getRemoteGate(dialledAddress);
+        if (remoteGateCache == null || remoteGateCache.isRemoved()) {
+            remoteGateCache = getRemoteGate(dialledAddress);
+        }
 
-        if (remoteGate == null || remoteGate.getIrisState() != StargateIrisState.OPEN) {
+        if (remoteGateCache == null || remoteGateCache.getIrisState() != StargateIrisState.OPEN) {
             handleEntityVaporization();
             return;
         }
@@ -734,15 +749,21 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
     public void onLoad() {
         if (!world.isRemote) {
             StargateWorldData.get(world).register(getAddress(), new ExtendedPos(pos, world.getDimension().getType().getId()));
-            if (isMerged()) updateChunkLoading(true);
+            if (isMerged()) {
+                updateChunkLoading(true);
+            }
         }
     }
 
     @Override
     public void remove() {
         if (world != null && !world.isRemote) {
-            if (isMerged()) updateChunkLoading(false);
-            if (vortexState != StargateVortexState.IDLE) disconnect();
+            if (isMerged()) {
+                updateChunkLoading(false);
+            }
+            if (vortexState != StargateVortexState.IDLE) {
+                disconnect();
+            }
             if (controllerPos != null) {
                 TileEntity te = world.getTileEntity(controllerPos);
                 if (te instanceof StargateControllerTileEntity) ((StargateControllerTileEntity) te).unlink();
@@ -1112,6 +1133,19 @@ public class StargateBaseTileEntity extends TileEntity implements ITickable, IIn
                 remoteGate.fireComputerEvent("sgMessageReceived", messageArgs);
             }
         }
+    }
+
+    public void registerPowerUnit(RFPowerUnitTileEntity unit) {
+        powerUnitCache.add(unit);
+    }
+
+    public void unregisterPowerUnit(RFPowerUnitTileEntity unit) {
+        powerUnitCache.remove(unit);
+    }
+
+    private Collection<RFPowerUnitTileEntity> getValidPowerUnits() {
+        powerUnitCache.removeIf(te -> te.isRemoved());
+        return powerUnitCache;
     }
 
 }

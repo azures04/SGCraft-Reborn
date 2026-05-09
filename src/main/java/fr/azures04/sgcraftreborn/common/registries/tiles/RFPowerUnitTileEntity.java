@@ -3,6 +3,7 @@ package fr.azures04.sgcraftreborn.common.registries.tiles;
 import fr.azures04.sgcraftreborn.common.Constants;
 import fr.azures04.sgcraftreborn.common.containers.RFPowerUnitContainer;
 import fr.azures04.sgcraftreborn.common.registries.ModTilesEntities;
+import fr.azures04.sgcraftreborn.common.util.math.Stargates;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.Container;
@@ -10,7 +11,6 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityType;
 import net.minecraft.util.EnumFacing;
-import net.minecraft.util.ITickable;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.world.IInteractionObject;
@@ -21,9 +21,28 @@ import net.minecraftforge.energy.EnergyStorage;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class RFPowerUnitTileEntity extends TileEntity implements ITickable, IInteractionObject {
+public class RFPowerUnitTileEntity extends TileEntity implements IInteractionObject {
 
-    private final EnergyStorage energyStorage = new EnergyStorage(4000000);
+    private final EnergyStorage energyStorage = new EnergyStorage(4000000, 4000000, 4000000) {
+        @Override
+        public int receiveEnergy(int maxReceive, boolean simulate) {
+            int received = super.receiveEnergy(maxReceive, simulate);
+            if (received > 0 && !simulate) {
+                markDirty();
+            }
+            return received;
+        }
+
+        @Override
+        public int extractEnergy(int maxExtract, boolean simulate) {
+            int extracted = super.extractEnergy(maxExtract, simulate);
+            if (extracted > 0 && !simulate) {
+                markDirty();
+            }
+            return extracted;
+        }
+    };
+
     private final LazyOptional<EnergyStorage> energyHolder = LazyOptional.of(() -> energyStorage);
     private int lastEnergy = 0;
     private static final double FE_PER_SGPU = 80.0;
@@ -34,17 +53,6 @@ public class RFPowerUnitTileEntity extends TileEntity implements ITickable, IInt
 
     public RFPowerUnitTileEntity() {
         super(ModTilesEntities.RF_POWER_UNIT_BLOCK);
-    }
-
-    @Override
-    public void tick() {
-        if (world != null && !world.isRemote) {
-            int currentEnergy = energyStorage.getEnergyStored();
-            if (currentEnergy != lastEnergy) {
-                lastEnergy = currentEnergy;
-                markDirty();
-            }
-        }
     }
 
     @Override
@@ -117,5 +125,23 @@ public class RFPowerUnitTileEntity extends TileEntity implements ITickable, IInt
     @Override
     public ITextComponent getCustomName() {
         return null;
+    }
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        if (world != null && !world.isRemote) {
+            StargateBaseTileEntity gate = Stargates.searchNearbyStargate(world, pos);
+            if (gate != null) gate.registerPowerUnit(this);
+        }
+    }
+
+    @Override
+    public void remove() {
+        if (world != null && !world.isRemote) {
+            StargateBaseTileEntity gate = Stargates.searchNearbyStargate(world, pos);
+            if (gate != null) gate.unregisterPowerUnit(this);
+        }
+        super.remove();
     }
 }
