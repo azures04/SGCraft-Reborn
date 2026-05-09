@@ -12,7 +12,7 @@ apply plugin: "net.minecraftforge.gradle"
 apply plugin: "eclipse"
 apply plugin: "maven-publish"
 
-version = "1.14.4-0.0.1-alpha"
+version = "1.14.4-0.0.2-beta"
 group = "fr.azures04.sgcraftreborn"
 archivesBaseName = "sgcraftreborn"
 
