@@ -16,6 +16,7 @@ import fr.azures04.sgcraftreborn.common.world.data.StargateWorldData;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.SlabBlock;
+import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
@@ -56,7 +57,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class StargateBaseTileEntity extends TileEntity implements ITickableTileEntity, INamedContainerProvider {
 
     private transient Set<StargateAbstractAPI> computerAdapters = ConcurrentHashMap.newKeySet();
-    private transient List<RFPowerUnitTileEntity> cachedPowerUnits = new ArrayList<>();
+    private transient Set<RFPowerUnitTileEntity> cachedPowerUnits = ConcurrentHashMap.newKeySet();
 
     private static final float[][] CHEVRON_ANGLES = {
         { 45f, 45f, 40f },
@@ -236,7 +237,7 @@ public class StargateBaseTileEntity extends TileEntity implements ITickableTileE
             }
         }
 
-        List<RFPowerUnitTileEntity> powerUnits = getValidPowerUnits();
+        Set<RFPowerUnitTileEntity> powerUnits = getValidPowerUnits();
         for (RFPowerUnitTileEntity powerUnit : powerUnits) {
             energyAvailable += powerUnit.getAvailableSGEnergy();
         }
@@ -336,8 +337,12 @@ public class StargateBaseTileEntity extends TileEntity implements ITickableTileE
             if (irisPhase > targetPhase) irisPhase--;
 
             if (vortexState == StargateVortexState.ACTIVE || vortexState == StargateVortexState.OPENING || vortexState == StargateVortexState.CLOSING) {
-                applyRandomImpulse();
-                updateEventHorizon();
+                PlayerEntity localPlayer = Minecraft.getInstance().player;
+
+                if (localPlayer != null && localPlayer.getDistanceSq(new Vec3d(pos)) < 4096.0) {
+                    applyRandomImpulse();
+                    updateEventHorizon();
+                }
             }
             return;
         }
@@ -1169,7 +1174,7 @@ public class StargateBaseTileEntity extends TileEntity implements ITickableTileE
         return new StargateBaseCamouflageContainer(i, playerInventory, pos);
     }
 
-    private List<RFPowerUnitTileEntity> getValidPowerUnits() {
+    private Set<RFPowerUnitTileEntity> getValidPowerUnits() {
         cachedPowerUnits.removeIf(TileEntity::isRemoved);
         return cachedPowerUnits;
     }

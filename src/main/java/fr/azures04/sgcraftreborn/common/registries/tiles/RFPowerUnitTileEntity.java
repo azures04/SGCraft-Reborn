@@ -24,9 +24,27 @@ import net.minecraftforge.energy.EnergyStorage;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class RFPowerUnitTileEntity extends TileEntity implements ITickableTileEntity, INamedContainerProvider {
+public class RFPowerUnitTileEntity extends TileEntity implements INamedContainerProvider {
 
-    private final EnergyStorage energyStorage = new EnergyStorage(4000000, 4000000, 4000000);
+    private final EnergyStorage energyStorage = new EnergyStorage(4000000, 4000000, 4000000) {
+        @Override
+        public int receiveEnergy(int maxReceive, boolean simulate) {
+            int received = super.receiveEnergy(maxReceive, simulate);
+            if (received > 0 && !simulate) {
+                markDirty();
+            }
+            return received;
+        }
+
+        @Override
+        public int extractEnergy(int maxExtract, boolean simulate) {
+            int received = super.receiveEnergy(maxReceive, simulate);
+            if (received > 0 && !simulate) {
+                markDirty();
+            }
+            return received;
+        }
+    };
     private final LazyOptional<EnergyStorage> energyHolder = LazyOptional.of(() -> energyStorage);
     private int lastEnergy = 0;
     private static final double FE_PER_SGPU = 80.0;
@@ -37,18 +55,6 @@ public class RFPowerUnitTileEntity extends TileEntity implements ITickableTileEn
 
     public RFPowerUnitTileEntity() {
         super(ModTilesEntities.RF_POWER_UNIT_BLOCK);
-    }
-
-    @Override
-    public void tick() {
-        if (world != null && !world.isRemote) {
-            int currentEnergy = energyStorage.getEnergyStored();
-            if (currentEnergy != lastEnergy) {
-                lastEnergy = currentEnergy;
-                markDirty();
-
-            }
-        }
     }
 
     @Override
