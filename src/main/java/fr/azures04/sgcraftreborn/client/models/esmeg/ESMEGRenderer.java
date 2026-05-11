@@ -1,56 +1,57 @@
 package fr.azures04.sgcraftreborn.client.models.esmeg;
 
-import com.mojang.blaze3d.platform.GlStateManager;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.IVertexBuilder;
+import net.minecraft.client.renderer.*;
+import net.minecraft.client.renderer.texture.OverlayTexture; // IMPORTANT
 import net.minecraft.util.Direction;
-import org.lwjgl.opengl.GL11;
-
-import java.util.HashMap;
+import net.minecraft.util.ResourceLocation;
 import java.util.Map;
 
 public class ESMEGRenderer {
 
-    public static void render(ESMEGModel model, double x, double y, double z) {
-        render(model, x, y, z, new HashMap<>());
-    }
-
-    public static void render(ESMEGModel model, double x, double y, double z, Map<String, String> state) {
-        Tessellator tess = Tessellator.getInstance();
-        BufferBuilder buf = tess.getBuffer();
+    public static void render(ESMEGModel model, MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLight, int combinedOverlay, Map<String, String> state) {
+        Matrix4f matrix = matrixStack.getLast().getMatrix();
+        Matrix3f normalMatrix = matrixStack.getLast().getNormal();
 
         for (int i = 0; i < model.faces.length; i++) {
-            buf.begin(GL11.GL_TRIANGLES, DefaultVertexFormats.POSITION_TEX_NORMAL);
             ESMEGModel.Face face = model.faces[i];
-            Minecraft.getInstance().getTextureManager().bindTexture(model.getTexture(face.texture, state));
+            ResourceLocation texLoc = model.getTexture(face.texture, state);
+            IVertexBuilder builder = buffer.getBuffer(RenderType.getEntityCutout(texLoc));
+
             for (int j = 0; j < face.triangles.length; j++) {
                 int[] triangle = face.triangles[j];
-                for (int k = 0; k < 3; k++) {
-                    int vertexIndex = triangle[k];
-                    double[] vertex = face.vertices[vertexIndex];
-                    buf
-                        .pos((x + vertex[0]) + 0.5, y + vertex[1], (z + vertex[2]) + 0.5)
-                        .tex(vertex[6], vertex[7])
-                        .normal((float) vertex[3], (float) vertex[4], (float) vertex[5])
-                    .endVertex();
+
+                for (int k = 0; k < 4; k++) {
+                    int vertexIndex = triangle[Math.min(k, 2)];
+                    double[] v = face.vertices[vertexIndex];
+
+                    Vector3f norm = new Vector3f((float) v[3], (float) v[4], (float) v[5]);
+                    norm.transform(normalMatrix);
+
+                    builder.pos(matrix, (float) v[0], (float) v[1], (float) v[2])
+                        .color(255, 255, 255, 255)
+                        .tex((float) v[6], (float) v[7])
+                        .overlay(OverlayTexture.NO_OVERLAY)
+                        .lightmap(combinedLight)
+                        .normal(norm.getX(), norm.getY(), norm.getZ())
+                        .endVertex();
                 }
             }
-            tess.draw();
         }
     }
 
-    public static void renderWithRotation(ESMEGModel model, double x, double y, double z, Direction facing) {
-        renderWithRotation(model, x, y, z, facing, new HashMap<>());
+    public static void renderWithRotation(ESMEGModel model, MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLight, int combinedOverlay, Direction facing) {
+        renderWithRotation(model, matrixStack, buffer, combinedLight, combinedOverlay, facing, new java.util.HashMap<>());
     }
 
-    public static void renderWithRotation(ESMEGModel model, double x, double y, double z, Direction facing, Map<String, String> state) {
-        GlStateManager.pushMatrix();
-        GlStateManager.translated(x + 0.5, y + 0.5, z + 0.5);
-        GlStateManager.rotatef(getAngleFromFacing(facing), 0, 1, 0);
-        render(model, -0.5, -0.5, -0.5, state);
-        GlStateManager.popMatrix();
+    public static void renderWithRotation(ESMEGModel model, MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLight, int combinedOverlay, Direction facing, Map<String, String> state) {
+        matrixStack.push();
+        matrixStack.translate(0.5, 0.0, 0.5);
+        matrixStack.rotate(Vector3f.YP.rotationDegrees(getAngleFromFacing(facing)));
+
+        render(model, matrixStack, buffer, combinedLight, combinedOverlay, state);
+        matrixStack.pop();
     }
 
     private static float getAngleFromFacing(Direction facing) {
@@ -67,5 +68,4 @@ public class ESMEGRenderer {
                 return 0f;
         }
     }
-
 }

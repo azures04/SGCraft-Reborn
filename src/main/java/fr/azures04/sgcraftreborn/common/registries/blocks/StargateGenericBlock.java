@@ -2,7 +2,6 @@ package fr.azures04.sgcraftreborn.common.registries.blocks;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
-import net.minecraft.util.BlockRenderLayer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockReader;
 
@@ -10,11 +9,6 @@ public class StargateGenericBlock extends Block {
 
     public StargateGenericBlock(Properties properties) {
         super(properties);
-    }
-
-    @Override
-    public BlockRenderLayer getRenderLayer() {
-        return BlockRenderLayer.CUTOUT;
     }
 
     @Override

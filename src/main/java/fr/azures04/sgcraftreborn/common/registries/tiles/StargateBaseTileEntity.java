@@ -1,6 +1,5 @@
 package fr.azures04.sgcraftreborn.common.registries.tiles;
 
-import fr.azures04.sgcraftreborn.SGCraftReborn;
 import fr.azures04.sgcraftreborn.common.api.StargateAbstractAPI;
 import fr.azures04.sgcraftreborn.common.config.SGCraftRebornConfig;
 import fr.azures04.sgcraftreborn.common.containers.StargateBaseCamouflageContainer;
@@ -604,7 +603,7 @@ public class StargateBaseTileEntity extends TileEntity implements ITickableTileE
         if (server == null) return;
 
         DimensionType dimType = DimensionType.getById(connectedLoc.getDimension());
-        ServerWorld targetWorld = server.func_71218_a(dimType);
+        ServerWorld targetWorld = server.getWorld(dimType);
 
         if (targetWorld != null && targetWorld.isBlockLoaded(connectedLoc.getPos())) {
             TileEntity te = targetWorld.getTileEntity(connectedLoc.getPos());
@@ -631,7 +630,7 @@ public class StargateBaseTileEntity extends TileEntity implements ITickableTileE
         if (server == null) return;
 
         DimensionType dimType = DimensionType.getById(connectedLoc.getDimension());
-        ServerWorld targetWorld = server.func_71218_a(dimType);
+        ServerWorld targetWorld = server.getWorld(dimType);
         if (targetWorld == null) return;
 
         BlockPos targetBasePos = new BlockPos(connectedLoc.getX(), connectedLoc.getY(), connectedLoc.getZ());
@@ -669,7 +668,7 @@ public class StargateBaseTileEntity extends TileEntity implements ITickableTileE
             if (entity instanceof ServerPlayerEntity) {
                 ServerPlayerEntity player = (ServerPlayerEntity) entity;
                 if (isCrossDimension) {
-                    player.func_200619_a(targetWorld, fX, fY, fZ, fYaw, fPitch);
+                    player.teleport(targetWorld, fX, fY, fZ, fYaw, fPitch);
                 } else {
                     player.connection.setPlayerLocation(fX, fY, fZ, fYaw, fPitch);
                 }
@@ -716,7 +715,7 @@ public class StargateBaseTileEntity extends TileEntity implements ITickableTileE
 
         if (remotePos != null) {
             DimensionType dimType = DimensionType.getById(remotePos.getDimension());
-            ServerWorld targetWorld = world.getServer().func_71218_a(dimType);
+            ServerWorld targetWorld = world.getServer().getWorld(dimType);
 
             if (targetWorld != null) {
                 BlockPos rPos = remotePos.getPos();
@@ -914,14 +913,12 @@ public class StargateBaseTileEntity extends TileEntity implements ITickableTileE
 
         if (maxDepth <= 0) return;
 
-        if (maxDepth <= 0) return;
-
         float vol = SGCraftRebornConfig.SOUND_VOLUME.get().floatValue();
 
         for (Entity entity : entities) {
-            double eX = entity.posX;
-            double eY = entity.posY + (entity.stepHeight / 2.0);
-            double eZ = entity.posZ;
+            double eX = entity.getPosX();
+            double eY = entity.getPosY() + (entity.stepHeight / 2.0);
+            double eZ = entity.getPosZ();
 
             double distanceAlongAxis = 0.0;
             double distanceFromAxis = 0.0;

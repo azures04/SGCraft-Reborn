@@ -1,6 +1,8 @@
 package fr.azures04.sgcraftreborn.client.models.tiles;
 
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.IVertexBuilder;
 import fr.azures04.sgcraftreborn.common.Constants;
 import fr.azures04.sgcraftreborn.common.registries.blocks.StargateBaseBlock;
 import fr.azures04.sgcraftreborn.common.registries.tiles.StargateBaseTileEntity;
@@ -11,14 +13,14 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.*;
-import net.minecraft.client.renderer.texture.AtlasTexture;
+import net.minecraft.client.renderer.texture.Texture;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.items.CapabilityItemHandler;
-import org.lwjgl.opengl.GL13;
+import org.lwjgl.opengl.GL11;
 
 
 public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateBaseTileEntity> {
@@ -81,11 +83,19 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
         Outer
     }
 
+    private static final ResourceLocation CHEVRON_TEXTURE = new ResourceLocation(Constants.MOD_ID, "textures/tileentity/stargate.png");
+    private static final ResourceLocation CHEVRON_LIT_TEXTURE = new ResourceLocation(Constants.MOD_ID, "textures/tileentity/stargate_lit.png");
+
+    public StargateBaseTileEntityRenderer(TileEntityRendererDispatcher rendererDispatcherIn) {
+        super(rendererDispatcherIn);
+    }
+
+
     @Override
-    public void render(StargateBaseTileEntity tileEntityIn, double x, double y, double z, float partialTicks, int destroyStage) {
+    public void render(StargateBaseTileEntity tileEntityIn, float partialTicks, MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int combinedLightIn, int combinedOverlayIn) {
         if (!tileEntityIn.isMerged()) return;
 
-        BlockState state = tileEntityIn.getWorld().getBlockState(tileEntityIn.getPos());
+        BlockState state = tileEntityIn.getBlockState();
 
         if (!(state.getBlock() instanceof StargateBaseBlock)) {
             return;
@@ -93,69 +103,46 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
 
         Direction facing = state.get(StargateBaseBlock.FACING);
 
-        GlStateManager.pushMatrix();
-        GlStateManager.translated(x + 0.5, y + 0.5, z + 0.5);
+        matrixStackIn.push();
+        matrixStackIn.translate(0.5, 0.5, 0.5);
 
         if (facing == Direction.UP) {
-            GlStateManager.rotatef(90, 1, 0, 0);
+            matrixStackIn.rotate(Vector3f.XP.rotationDegrees(90));
         } else if (facing == Direction.DOWN) {
-            GlStateManager.rotatef(-90, 1, 0, 0);
+            matrixStackIn.rotate(Vector3f.XP.rotationDegrees(-90));
         } else {
-            GlStateManager.rotatef(-facing.getHorizontalAngle(), 0, 1, 0);
+            matrixStackIn.rotate(Vector3f.YP.rotationDegrees(-facing.getHorizontalAngle()));
         }
 
-        GlStateManager.translated(0, 2.0, 0);
+        matrixStackIn.translate(0.0, 2.0, 0.0);
 
-        GlStateManager.enableRescaleNormal();
-        GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F);
+        ResourceLocation baseTexture = new ResourceLocation(Constants.MOD_ID, "textures/tileentity/stargate.png");
+        IVertexBuilder builder = bufferIn.getBuffer(RenderType.getEntityCutout(baseTexture));
 
-        this.bindTexture(new ResourceLocation(Constants.MOD_ID, "textures/tileentity/stargate.png"));
-        Tessellator tessellator = Tessellator.getInstance();
-        BufferBuilder buffer = tessellator.getBuffer();
-
-        renderRing(buffer, tessellator, ringMidRadius - ringOverlap, ringOuterRadius, RingType.Outer, ringZOffset);
-        renderInnerRing(tileEntityIn, buffer, tessellator, partialTicks);
-        renderChevrons(tileEntityIn, buffer, tessellator);
+        renderRing(matrixStackIn, builder, ringMidRadius - ringOverlap, ringOuterRadius, RingType.Outer, ringZOffset, combinedLightIn, combinedOverlayIn);
+        renderInnerRing(tileEntityIn, matrixStackIn, builder, partialTicks, combinedLightIn, combinedOverlayIn);
+        renderChevrons(tileEntityIn, matrixStackIn, builder, combinedLightIn, combinedOverlayIn);
 
         if (tileEntityIn.hasIrisUpgrade()) {
-            renderIris(tileEntityIn, buffer, tessellator, partialTicks);
+            renderIris(tileEntityIn, matrixStackIn, bufferIn, partialTicks, combinedLightIn, combinedOverlayIn);
         }
-
-
-        renderCamouflage(tileEntityIn);
 
         if (tileEntityIn.getVortexState() != StargateVortexState.IDLE && tileEntityIn.getVortexState() != StargateVortexState.DIALLING) {
-            renderEventHorizon(tileEntityIn, buffer, tessellator);
+            renderEventHorizon(tileEntityIn, matrixStackIn, bufferIn, combinedLightIn, combinedOverlayIn);
         }
 
-        GlStateManager.disableRescaleNormal();
-        GlStateManager.popMatrix();
+        renderCamouflage(tileEntityIn, matrixStackIn, bufferIn, combinedLightIn, combinedOverlayIn);
+        matrixStackIn.pop();
     }
 
-    private void renderCamouflage(StargateBaseTileEntity tileEntityIn) {
+    private void renderCamouflage(StargateBaseTileEntity tileEntityIn, MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int combinedLightIn, int combinedOverlayIn) {
         tileEntityIn.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY).ifPresent(inventory -> {
             BlockRendererDispatcher dispatcher = Minecraft.getInstance().getBlockRendererDispatcher();
 
-            int combinedLight = tileEntityIn.getWorld().getCombinedLight(tileEntityIn.getPos(), 0);
-            int lightX = combinedLight % 65536;
-            int lightY = combinedLight / 65536;
-
-            GlStateManager.pushMatrix();
-
-            GlStateManager.activeTexture(GL13.GL_TEXTURE1);
-            GlStateManager.enableTexture();
-            GL13.glMultiTexCoord2f(GL13.GL_TEXTURE1, (float) lightX, (float) lightY);
-
-            GlStateManager.activeTexture(GL13.GL_TEXTURE0);
-            this.bindTexture(AtlasTexture.LOCATION_BLOCKS_TEXTURE);
-
-            RenderHelper.enableStandardItemLighting();
-
-            Direction facing = tileEntityIn.getWorld()
-                    .getBlockState(tileEntityIn.getPos())
-                    .get(StargateBaseBlock.FACING);
-
+            Direction facing = tileEntityIn.getBlockState().get(StargateBaseBlock.FACING);
             float rotY = facing.getHorizontalAngle();
+
+            matrixStackIn.push();
 
             for (int i = 0; i < 5; i++) {
                 ItemStack stack = inventory.getStackInSlot(i);
@@ -164,7 +151,7 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
                 if (block == Blocks.AIR) continue;
                 BlockState state = block.getDefaultState();
 
-                GlStateManager.pushMatrix();
+                matrixStackIn.push();
 
                 float offsetX = 0;
                 float offsetZ = 0;
@@ -173,21 +160,21 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
                 switch (facing) {
                     case EAST:
                         offsetX = i - 2.5f;
-                        offsetZ = -1.5f;
+                        offsetZ = -0.5f;
                         finalRot = rotY - 90.0f;
                         break;
                     case WEST:
                         offsetX = i - 2.5f;
-                        offsetZ = 0.5f;
+                        offsetZ = -0.5f;
                         finalRot = rotY - 90.0f;
                         break;
                     case NORTH:
-                        offsetX = i - 1.5f;
+                        offsetX = i - 2.5f;
                         offsetZ = -0.5f;
                         finalRot = rotY - 90;
                         break;
                     case SOUTH:
-                        offsetX = i - 3.5f;
+                        offsetX = i - 2.5f;
                         offsetZ = -0.5f;
                         finalRot = rotY - 90.0f;
                         break;
@@ -197,60 +184,65 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
                         break;
                 }
 
-                GlStateManager.translatef(offsetX, -2.5f, offsetZ);
+                matrixStackIn.translate(offsetX, -2.5f, offsetZ);
 
-                GlStateManager.translatef(0.5f, 0.5f, 0.5f);
-                GlStateManager.rotatef(finalRot, 0.0f, 1.0f, 0.0f);
-                GlStateManager.translatef(-0.5f, -0.5f, -0.5f);
+                matrixStackIn.translate(0.5f, 0.5f, 0.5f);
+                matrixStackIn.rotate(Vector3f.YP.rotationDegrees(finalRot));
+                matrixStackIn.translate(-0.5f, -0.5f, -0.5f);
 
-                dispatcher.renderBlockBrightness(state, 1.0f);
+                dispatcher.renderBlock(state, matrixStackIn, bufferIn, combinedLightIn, combinedOverlayIn, net.minecraftforge.client.model.data.EmptyModelData.INSTANCE);
 
-                GlStateManager.popMatrix();
+                matrixStackIn.pop();
             }
 
-            RenderHelper.disableStandardItemLighting();
-
-            GlStateManager.activeTexture(GL13.GL_TEXTURE1);
-            GlStateManager.enableTexture();
-            GlStateManager.activeTexture(GL13.GL_TEXTURE0);
-
-            GlStateManager.popMatrix();
+            matrixStackIn.pop();
         });
     }
 
-    private void renderInnerRing(StargateBaseTileEntity te, BufferBuilder buffer, Tessellator tessellator, float partialTicks) {
-        GlStateManager.pushMatrix();
+    private void renderInnerRing(StargateBaseTileEntity te, MatrixStack matrixStack, IVertexBuilder builder, float partialTicks, int combinedLight, int combinedOverlay) {
+        matrixStack.push();
         double currentAngle = te.getLastRingAngle() + (te.getRingAngle() - te.getLastRingAngle()) * partialTicks;
         double symbolOffset = (360.0 / 39.0) / 2.0;
-
-        GlStateManager.rotatef((float) (currentAngle + symbolOffset), 0, 0, 1);
-        renderRing(buffer, tessellator, ringInnerRadius, ringMidRadius, RingType.Inner, 0);
-        GlStateManager.popMatrix();
+        matrixStack.rotate(Vector3f.ZP.rotationDegrees((float) (currentAngle + symbolOffset)));
+        renderRing(matrixStack, builder, ringInnerRadius, ringMidRadius, RingType.Inner, 0, combinedLight, combinedOverlay);
+        matrixStack.pop();
     }
 
-    private void renderRing(BufferBuilder buffer, Tessellator tessellator, double r1, double r2, RingType type, double dz) {
+    private void renderRing(MatrixStack matrixStack, IVertexBuilder builder, double r1, double r2, RingType type, double dz, int combinedLight, int combinedOverlay) {
         double z = ringDepth / 2 + dz;
         double u = 0, du = 0, dv = 0;
 
-        buffer.begin(7, DefaultVertexFormats.POSITION_TEX_NORMAL);
+        Matrix4f matrix = matrixStack.getLast().getMatrix();
+        Matrix3f normalMatrix = matrixStack.getLast().getNormal();
 
         for (int i = 0; i < numRingSegments; i++) {
             selectTile(0x00);
 
             if (type == RingType.Outer) {
                 setNormal((float) c[i], (float) s[i], 0);
-                vertex(buffer, r2 * c[i], r2 * s[i], z, 0, 0); vertex(buffer, r2 * c[i], r2 * s[i], -z, 0, 16);
-                vertex(buffer, r2 * c[i + 1], r2 * s[i + 1], -z, 16, 16); vertex(buffer, r2 * c[i + 1], r2 * s[i + 1], z, 16, 0);
+                vertex(builder, matrix, normalMatrix, r2 * c[i], r2 * s[i], z, 0, 0, combinedLight, combinedOverlay);
+                vertex(builder, matrix, normalMatrix, r2 * c[i], r2 * s[i], -z, 0, 16, combinedLight, combinedOverlay);
+
+                setNormal((float) c[i + 1], (float) s[i + 1], 0);
+                vertex(builder, matrix, normalMatrix, r2 * c[i + 1], r2 * s[i + 1], -z, 16, 16, combinedLight, combinedOverlay);
+                vertex(builder, matrix, normalMatrix, r2 * c[i + 1], r2 * s[i + 1], z, 16, 0, combinedLight, combinedOverlay);
             }
+
             if (type == RingType.Inner) {
                 setNormal((float) -c[i], (float) -s[i], 0);
-                vertex(buffer, r1 * c[i], r1 * s[i], -z, 0, 0); vertex(buffer, r1 * c[i], r1 * s[i], z, 0, 16);
-                vertex(buffer, r1 * c[i + 1], r1 * s[i + 1], z, 16, 16); vertex(buffer, r1 * c[i + 1], r1 * s[i + 1], -z, 16, 0);
+                vertex(builder, matrix, normalMatrix, r1 * c[i], r1 * s[i], -z, 0, 0, combinedLight, combinedOverlay);
+                vertex(builder, matrix, normalMatrix, r1 * c[i], r1 * s[i], z, 0, 16, combinedLight, combinedOverlay);
+
+                setNormal((float) -c[i + 1], (float) -s[i + 1], 0);
+                vertex(builder, matrix, normalMatrix, r1 * c[i + 1], r1 * s[i + 1], z, 16, 16, combinedLight, combinedOverlay);
+                vertex(builder, matrix, normalMatrix, r1 * c[i + 1], r1 * s[i + 1], -z, 16, 0, combinedLight, combinedOverlay);
             }
 
             setNormal(0, 0, -1);
-            vertex(buffer, r1 * c[i], r1 * s[i], -z, 0, 16); vertex(buffer, r1 * c[i + 1], r1 * s[i + 1], -z, 16, 16);
-            vertex(buffer, r2 * c[i + 1], r2 * s[i + 1], -z, 16, 0); vertex(buffer, r2 * c[i], r2 * s[i], -z, 0, 0);
+            vertex(builder, matrix, normalMatrix, r1 * c[i], r1 * s[i], -z, 0, 16, combinedLight, combinedOverlay);
+            vertex(builder, matrix, normalMatrix, r1 * c[i + 1], r1 * s[i + 1], -z, 16, 16, combinedLight, combinedOverlay);
+            vertex(builder, matrix, normalMatrix, r2 * c[i + 1], r2 * s[i + 1], -z, 16, 0, combinedLight, combinedOverlay);
+            vertex(builder, matrix, normalMatrix, r2 * c[i], r2 * s[i], -z, 0, 0, combinedLight, combinedOverlay);
 
             setNormal(0, 0, 1);
             if (type == RingType.Outer) {
@@ -261,13 +253,15 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
                 u = ringSymbolTextureLength - (i + 1) * ringSymbolSegmentWidth;
                 du = ringSymbolSegmentWidth; dv = ringSymbolTextureHeight;
             }
-            vertex(buffer, r1 * c[i], r1 * s[i], z, u + du, dv); vertex(buffer, r2 * c[i], r2 * s[i], z, u + du, 0);
-            vertex(buffer, r2 * c[i + 1], r2 * s[i + 1], z, u, 0); vertex(buffer, r1 * c[i + 1], r1 * s[i + 1], z, u, dv);
+
+            vertex(builder, matrix, normalMatrix, r1 * c[i], r1 * s[i], z, u + du, dv, combinedLight, combinedOverlay);
+            vertex(builder, matrix, normalMatrix, r2 * c[i], r2 * s[i], z, u + du, 0, combinedLight, combinedOverlay);
+            vertex(builder, matrix, normalMatrix, r2 * c[i + 1], r2 * s[i + 1], z, u, 0, combinedLight, combinedOverlay);
+            vertex(builder, matrix, normalMatrix, r1 * c[i + 1], r1 * s[i + 1], z, u, dv, combinedLight, combinedOverlay);
         }
-        tessellator.draw();
     }
 
-    private void renderChevrons(StargateBaseTileEntity te, BufferBuilder buffer, Tessellator tessellator) {
+    private void renderChevrons(StargateBaseTileEntity te, MatrixStack matrixStack, IVertexBuilder builder, int combinedLight, int combinedOverlay) {
         int numChevrons = te.hasChevronUpgrade() ? 9 : 7;
         int i0 = numChevrons > 7 ? 0 : 1;
         int k = te.getDialledAddress().length() > 7 ? 1 : 0;
@@ -278,62 +272,160 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
             int j = chevronEngagementSequences[k][i];
             boolean engaged = te.getNumEngagedChevrons() > j;
 
-            GlStateManager.pushMatrix();
-            GlStateManager.rotatef(90 - (i - 4) * angle, 0, 0, 1);
-            renderChevron(buffer, tessellator, engaged);
-            GlStateManager.popMatrix();
+            matrixStack.push();
+            matrixStack.rotate(Vector3f.ZP.rotationDegrees(90 - (i - 4) * angle));
+
+            renderChevron(matrixStack, builder, engaged, combinedLight, combinedOverlay);
+
+            matrixStack.pop();
         }
     }
 
-    private void renderChevron(BufferBuilder buffer, Tessellator tessellator, boolean engaged) {
+    private void renderChevron(MatrixStack matrixStack, IVertexBuilder builder, boolean engaged, int combinedLight, int combinedOverlay) {
         double r1 = chevronInnerRadius, r2 = chevronOuterRadius;
         double z2 = ringDepth / 2, z1 = z2 + chevronDepth;
         double w1 = chevronBorderWidth, w2 = w1 * 1.25;
         double y1 = chevronWidth / 4;
         double y2 = chevronWidth / 2;
 
-        if (engaged) GlStateManager.translated(-chevronMotionDistance, 0, 0);
+        matrixStack.push();
 
-        buffer.begin(7, DefaultVertexFormats.POSITION_TEX_NORMAL);
+        if (engaged) {
+            matrixStack.translate(-chevronMotionDistance, 0, 0);
+        }
+
+        Matrix4f matrix = matrixStack.getLast().getMatrix();
+        Matrix3f normalMatrix = matrixStack.getLast().getNormal();
+
         selectTile(chevronTextureIndex);
         setNormal(0, 0, 1);
-        vertex(buffer, r2, y2, z1, 0, 2); vertex(buffer, r1, y1, z1, 0, 16); vertex(buffer, r1 + w1, y1 - w1, z1, 4, 12); vertex(buffer, r2, y2 - w2, z1, 4, 2);
-        vertex(buffer, r2, y2, z1, 0, 0); vertex(buffer, r2, y2, z2, 0, 4); vertex(buffer, r1, y1, z2, 16, 4); vertex(buffer, r1, y1, z1, 16, 0);
-        vertex(buffer, r2, y2, z1, 16, 0); vertex(buffer, r2, y2 - w2, z1, 12, 0); vertex(buffer, r2, y2 - w2, z2, 12, 4); vertex(buffer, r2, y2, z2, 16, 4);
-        vertex(buffer, r1 + w1, y1 - w1, z1, 4, 12); vertex(buffer, r1, y1, z1, 0, 16); vertex(buffer, r1, -y1, z1, 16, 16); vertex(buffer, r1 + w1, -y1 + w1, z1, 12, 12);
-        vertex(buffer, r1, y1, z1, 0, 0); vertex(buffer, r1, y1, z2, 0, 4); vertex(buffer, r1, -y1, z2, 16, 4); vertex(buffer, r1, -y1, z1, 16, 0);
-        vertex(buffer, r2, -y2 + w2, z1, 12, 0); vertex(buffer, r1 + w1, -y1 + w1, z1, 12, 12); vertex(buffer, r1, -y1, z1, 16, 16); vertex(buffer, r2, -y2, z1, 16, 0);
-        vertex(buffer, r1, -y1, z1, 0, 0); vertex(buffer, r1, -y1, z2, 0, 4); vertex(buffer, r2, -y2, z2, 16, 4); vertex(buffer, r2, -y2, z1, 16, 0);
-        vertex(buffer, r2, -y2, z1, 0, 0); vertex(buffer, r2, -y2, z2, 0, 4); vertex(buffer, r2, -y2 + w2, z2, 4, 4); vertex(buffer, r2, -y2 + w2, z1, 4, 0);
-        vertex(buffer, r2, -y2, z2, 0, 0); vertex(buffer, r1, -y1, z2, 0, 16); vertex(buffer, r1, y1, z2, 16, 16); vertex(buffer, r2, y2, z2, 16, 0);
-        tessellator.draw();
+
+        vertex(builder, matrix, normalMatrix, r2, y2, z1, 0, 2, 255, 255, 255, combinedLight, combinedOverlay);
+        vertex(builder, matrix, normalMatrix, r1, y1, z1, 0, 16, 255, 255, 255, combinedLight, combinedOverlay);
+        vertex(builder, matrix, normalMatrix, r1 + w1, y1 - w1, z1, 4, 12, 255, 255, 255, combinedLight, combinedOverlay);
+        vertex(builder, matrix, normalMatrix, r2, y2 - w2, z1, 4, 2, 255, 255, 255, combinedLight, combinedOverlay);
+
+        vertex(builder, matrix, normalMatrix, r2, y2, z1, 0, 0, 255, 255, 255, combinedLight, combinedOverlay);
+        vertex(builder, matrix, normalMatrix, r2, y2, z2, 0, 4, 255, 255, 255, combinedLight, combinedOverlay);
+        vertex(builder, matrix, normalMatrix, r1, y1, z2, 16, 4, 255, 255, 255, combinedLight, combinedOverlay);
+        vertex(builder, matrix, normalMatrix, r1, y1, z1, 16, 0, 255, 255, 255, combinedLight, combinedOverlay);
+
+        vertex(builder, matrix, normalMatrix, r2, y2, z1, 16, 0, 255, 255, 255, combinedLight, combinedOverlay);
+        vertex(builder, matrix, normalMatrix, r2, y2 - w2, z1, 12, 0, 255, 255, 255, combinedLight, combinedOverlay);
+        vertex(builder, matrix, normalMatrix, r2, y2 - w2, z2, 12, 4, 255, 255, 255, combinedLight, combinedOverlay);
+        vertex(builder, matrix, normalMatrix, r2, y2, z2, 16, 4, 255, 255, 255, combinedLight, combinedOverlay);
+
+        vertex(builder, matrix, normalMatrix, r1 + w1, y1 - w1, z1, 4, 12, 255, 255, 255, combinedLight, combinedOverlay);
+        vertex(builder, matrix, normalMatrix, r1, y1, z1, 0, 16, 255, 255, 255, combinedLight, combinedOverlay);
+        vertex(builder, matrix, normalMatrix, r1, -y1, z1, 16, 16, 255, 255, 255, combinedLight, combinedOverlay);
+        vertex(builder, matrix, normalMatrix, r1 + w1, -y1 + w1, z1, 12, 12, 255, 255, 255, combinedLight, combinedOverlay);
+
+        vertex(builder, matrix, normalMatrix, r1, y1, z1, 0, 0, 255, 255, 255, combinedLight, combinedOverlay);
+        vertex(builder, matrix, normalMatrix, r1, y1, z2, 0, 4, 255, 255, 255, combinedLight, combinedOverlay);
+        vertex(builder, matrix, normalMatrix, r1, -y1, z2, 16, 4, 255, 255, 255, combinedLight, combinedOverlay);
+        vertex(builder, matrix, normalMatrix, r1, -y1, z1, 16, 0, 255, 255, 255, combinedLight, combinedOverlay);
+
+        vertex(builder, matrix, normalMatrix, r2, -y2 + w2, z1, 12, 0, 255, 255, 255, combinedLight, combinedOverlay);
+        vertex(builder, matrix, normalMatrix, r1 + w1, -y1 + w1, z1, 12, 12, 255, 255, 255, combinedLight, combinedOverlay);
+        vertex(builder, matrix, normalMatrix, r1, -y1, z1, 16, 16, 255, 255, 255, combinedLight, combinedOverlay);
+        vertex(builder, matrix, normalMatrix, r2, -y2, z1, 16, 0, 255, 255, 255, combinedLight, combinedOverlay);
+
+        vertex(builder, matrix, normalMatrix, r1, -y1, z1, 0, 0, 255, 255, 255, combinedLight, combinedOverlay);
+        vertex(builder, matrix, normalMatrix, r1, -y1, z2, 0, 4, 255, 255, 255, combinedLight, combinedOverlay);
+        vertex(builder, matrix, normalMatrix, r2, -y2, z2, 16, 4, 255, 255, 255, combinedLight, combinedOverlay);
+        vertex(builder, matrix, normalMatrix, r2, -y2, z1, 16, 0, 255, 255, 255, combinedLight, combinedOverlay);
+
+        vertex(builder, matrix, normalMatrix, r2, -y2, z1, 0, 0, 255, 255, 255, combinedLight, combinedOverlay);
+        vertex(builder, matrix, normalMatrix, r2, -y2, z2, 0, 4, 255, 255, 255, combinedLight, combinedOverlay);
+        vertex(builder, matrix, normalMatrix, r2, -y2 + w2, z2, 4, 4, 255, 255, 255, combinedLight, combinedOverlay);
+        vertex(builder, matrix, normalMatrix, r2, -y2 + w2, z1, 4, 0, 255, 255, 255, combinedLight, combinedOverlay);
+
+        vertex(builder, matrix, normalMatrix, r2, -y2, z2, 0, 0, 255, 255, 255, combinedLight, combinedOverlay);
+        vertex(builder, matrix, normalMatrix, r1, -y1, z2, 0, 16, 255, 255, 255, combinedLight, combinedOverlay);
+        vertex(builder, matrix, normalMatrix, r1, y1, z2, 16, 16, 255, 255, 255, combinedLight, combinedOverlay);
+        vertex(builder, matrix, normalMatrix, r2, y2, z2, 16, 0, 255, 255, 255, combinedLight, combinedOverlay);
 
         selectTile(chevronLitTextureIndex);
-        if (!engaged) GlStateManager.color4f(0.5f, 0.5f, 0.5f, 1.0f);
-        else GlStateManager.disableLighting();
 
-        buffer.begin(7, DefaultVertexFormats.POSITION_TEX_NORMAL);
-        setNormal(0, 0, 1);
-        vertex(buffer, r2, y2 - w2, z1, 0, 4); vertex(buffer, r1 + w1, y1 - w1, z1, 4, 16); vertex(buffer, r1 + w1, 0, z1, 8, 16); vertex(buffer, r2, 0, z1, 8, 4);
-        vertex(buffer, r2, 0, z1, 8, 4); vertex(buffer, r1 + w1, 0, z1, 8, 16); vertex(buffer, r1 + w1, -y1 + w1, z1, 12, 16); vertex(buffer, r2, -y2 + w2, z1, 16, 4);
-        vertex(buffer, r2, y2 - w2, z2, 0, 0); vertex(buffer, r2, y2 - w2, z1, 0, 4); vertex(buffer, r2, -y2 + w2, z1, 16, 4); vertex(buffer, r2, -y2 + w2, z2, 16, 0);
-        tessellator.draw();
+        int colorRGB;
+        int actualLight;
+        double litZ = z1 + 0.002;
 
-        GlStateManager.color4f(1f, 1f, 1f, 1f);
-        GlStateManager.enableLighting();
+        if (!engaged) {
+            colorRGB = 160;
+            actualLight = combinedLight;
+            setNormal(0, 0, 1);
+
+            vertex(builder, matrix, normalMatrix, r2, y2 - w2, litZ, 0, 4, colorRGB, colorRGB, colorRGB, actualLight, combinedOverlay);
+            vertex(builder, matrix, normalMatrix, r1 + w1, y1 - w1, litZ, 4, 16, colorRGB, colorRGB, colorRGB, actualLight, combinedOverlay);
+            vertex(builder, matrix, normalMatrix, r1 + w1, 0, litZ, 8, 16, colorRGB, colorRGB, colorRGB, actualLight, combinedOverlay);
+            vertex(builder, matrix, normalMatrix, r2, 0, litZ, 8, 4, colorRGB, colorRGB, colorRGB, actualLight, combinedOverlay);
+
+            vertex(builder, matrix, normalMatrix, r2, 0, litZ, 8, 4, colorRGB, colorRGB, colorRGB, actualLight, combinedOverlay);
+            vertex(builder, matrix, normalMatrix, r1 + w1, 0, litZ, 8, 16, colorRGB, colorRGB, colorRGB, actualLight, combinedOverlay);
+            vertex(builder, matrix, normalMatrix, r1 + w1, -y1 + w1, litZ, 12, 16, colorRGB, colorRGB, colorRGB, actualLight, combinedOverlay);
+            vertex(builder, matrix, normalMatrix, r2, -y2 + w2, litZ, 16, 4, colorRGB, colorRGB, colorRGB, actualLight, combinedOverlay);
+
+            vertex(builder, matrix, normalMatrix, r2, y2 - w2, z2, 0, 0, colorRGB, colorRGB, colorRGB, actualLight, combinedOverlay);
+            vertex(builder, matrix, normalMatrix, r2, y2 - w2, litZ, 0, 4, colorRGB, colorRGB, colorRGB, actualLight, combinedOverlay);
+            vertex(builder, matrix, normalMatrix, r2, -y2 + w2, litZ, 16, 4, colorRGB, colorRGB, colorRGB, actualLight, combinedOverlay);
+            vertex(builder, matrix, normalMatrix, r2, -y2 + w2, z2, 16, 0, colorRGB, colorRGB, colorRGB, actualLight, combinedOverlay);
+        } else {
+            colorRGB = 255;
+            actualLight = 15728880;
+
+            litGlowVertex(builder, matrix, r2, y2 - w2, litZ, 0, 4, colorRGB, actualLight, combinedOverlay);
+            litGlowVertex(builder, matrix, r1 + w1, y1 - w1, litZ, 4, 16, colorRGB, actualLight, combinedOverlay);
+            litGlowVertex(builder, matrix, r1 + w1, 0, litZ, 8, 16, colorRGB, actualLight, combinedOverlay);
+            litGlowVertex(builder, matrix, r2, 0, litZ, 8, 4, colorRGB, actualLight, combinedOverlay);
+
+            litGlowVertex(builder, matrix, r2, 0, litZ, 8, 4, colorRGB, actualLight, combinedOverlay);
+            litGlowVertex(builder, matrix, r1 + w1, 0, litZ, 8, 16, colorRGB, actualLight, combinedOverlay);
+            litGlowVertex(builder, matrix, r1 + w1, -y1 + w1, litZ, 12, 16, colorRGB, actualLight, combinedOverlay);
+            litGlowVertex(builder, matrix, r2, -y2 + w2, litZ, 16, 4, colorRGB, actualLight, combinedOverlay);
+
+            litGlowVertex(builder, matrix, r2, y2 - w2, z2, 0, 0, colorRGB, actualLight, combinedOverlay);
+            litGlowVertex(builder, matrix, r2, y2 - w2, litZ, 0, 4, colorRGB, actualLight, combinedOverlay);
+            litGlowVertex(builder, matrix, r2, -y2 + w2, litZ, 16, 4, colorRGB, actualLight, combinedOverlay);
+            litGlowVertex(builder, matrix, r2, -y2 + w2, z2, 16, 0, colorRGB, actualLight, combinedOverlay);
+        }
+
+        matrixStack.pop();
     }
-    private void renderEventHorizon(StargateBaseTileEntity te, BufferBuilder buffer, Tessellator tessellator) {
-        GlStateManager.pushMatrix();
-        this.bindTexture(new ResourceLocation(Constants.MOD_ID, "textures/tileentity/eventhorizon.png"));
-        GlStateManager.disableCull();
-        GlStateManager.disableLighting();
 
+    private void litGlowVertex(IVertexBuilder builder, Matrix4f matrix, double x, double y, double z, double u, double v, int rgb, int light, int overlay) {
+        builder.pos(matrix, (float) x, (float) y, (float) z)
+                .color(rgb, rgb, rgb, 255)
+                .tex((float) (u0 + u * textureScaleU), (float) (v0 + v * textureScaleV))
+                .overlay(overlay)
+                .lightmap(light)
+                .normal(0, 1, 0)
+                .endVertex();
+    }
+
+    private void renderEventHorizon(StargateBaseTileEntity te, MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int combinedLightIn, int combinedOverlayIn) {
+        matrixStackIn.push();
+
+        ResourceLocation texture = new ResourceLocation(Constants.MOD_ID, "textures/tileentity/eventhorizon.png");
 
         boolean useTransparency = fr.azures04.sgcraftreborn.common.config.SGCraftRebornConfig.TRANSPARENCY.get();
-        if (useTransparency) {
-            GlStateManager.enableBlend();
-            GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
-        }
+        RenderType renderType = useTransparency ? RenderType.getEntityTranslucent(texture) : RenderType.getEntitySolid(texture);
+        IVertexBuilder builder = bufferIn.getBuffer(renderType);
+
+        Minecraft.getInstance().getTextureManager().bindTexture(texture);
+        RenderSystem.recordRenderCall(() -> {
+            Texture texObj = Minecraft.getInstance().getTextureManager().getTexture(texture);
+            if (texObj != null) {
+                GL11.glBindTexture(GL11.GL_TEXTURE_2D, texObj.getGlTextureId());
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
+            }
+        });
+
+        Matrix4f matrix = matrixStackIn.getLast().getMatrix();
+        Matrix3f normalMatrix = matrixStackIn.getLast().getNormal();
+
+        int vortexLight = 15728880;
 
         double rclip = 2.5;
         if (te.getIrisState() != StargateIrisState.OPEN) {
@@ -344,88 +436,125 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
         double[][] grid = te.getEventHorizonGrid()[0];
 
         for (int i = 1; i < ehGridRadialSize; i++) {
-            buffer.begin(8, DefaultVertexFormats.POSITION_TEX_NORMAL);
-            for (int j = 0; j <= ehGridPolarSize; j++) {
-                ehVertex(buffer, grid, i, j, rclip);
-                ehVertex(buffer, grid, i + 1, j, rclip);
+            for (int j = 0; j < ehGridPolarSize; j++) {
+                ehVertex(builder, matrix, normalMatrix, grid, i, j, rclip, vortexLight, combinedOverlayIn);
+                ehVertex(builder, matrix, normalMatrix, grid, i + 1, j, rclip, vortexLight, combinedOverlayIn);
+                ehVertex(builder, matrix, normalMatrix, grid, i + 1, j + 1, rclip, vortexLight, combinedOverlayIn);
+                ehVertex(builder, matrix, normalMatrix, grid, i, j + 1, rclip, vortexLight, combinedOverlayIn);
             }
-            tessellator.draw();
         }
 
-        buffer.begin(6, DefaultVertexFormats.POSITION_TEX_NORMAL);
+        double centerZ = ehClip(grid[1][0] * 0.09, 0, rclip);
 
-        buffer.pos(0, 0, ehClip(grid[1][0] * 0.09, 0, rclip)).tex(0, 0).normal(0, 0, 1).endVertex();
-        for (int j = 0; j <= ehGridPolarSize; j++) {
-            ehVertex(buffer, grid, 1, j, rclip);
+        for (int j = 0; j < ehGridPolarSize; j++) {
+            builder.pos(matrix, 0, 0, (float) centerZ)
+                    .color(200, 225, 255, 255)
+                    .tex(0.5f, 0.5f)
+                    .overlay(combinedOverlayIn)
+                    .lightmap(vortexLight)
+                    .normal(normalMatrix, 0, 0, 1)
+                    .endVertex();
+
+            ehVertex(builder, matrix, normalMatrix, grid, 1, j, rclip, vortexLight, combinedOverlayIn);
+            ehVertex(builder, matrix, normalMatrix, grid, 1, j + 1, rclip, vortexLight, combinedOverlayIn);
+            ehVertex(builder, matrix, normalMatrix, grid, 1, j + 1, rclip, vortexLight, combinedOverlayIn);
         }
-        tessellator.draw();
 
-        GlStateManager.depthMask(true);
-        GlStateManager.enableLighting();
-        if (useTransparency) {
-            GlStateManager.disableBlend();
-        }
-
-        GlStateManager.enableCull();
-        GlStateManager.popMatrix();
+        matrixStackIn.pop();
     }
 
-    private void renderIris(StargateBaseTileEntity te, BufferBuilder buffer, Tessellator tessellator, float partialTicks) {
-        this.bindTexture(new ResourceLocation(Constants.MOD_ID, "textures/tileentity/iris.png"));
+    private void renderIrisBlade(MatrixStack matrixStack, IVertexBuilder builder, double a, int combinedLight, int combinedOverlay) {
+        double aa = a * 60, r = 2.31, w1 = 2.40, w2 = 1.85, h0 = 0.16, h1 = 1.00;
+        double h = h1 - (h1 - h0) * a * a;
+        double u = w2 / w1, v = h / h1, v0 = h0 / h1;
+        double z0 = 0.1, z1 = 0.01;
+
+        matrixStack.push();
+        matrixStack.translate(r, 0, 0);
+        matrixStack.rotate(Vector3f.ZP.rotationDegrees((float) -aa));
+
+        Matrix4f matrix = matrixStack.getLast().getMatrix();
+        Matrix3f normalMatrix = matrixStack.getLast().getNormal();
+
+        bladeVertex(builder, matrix, normalMatrix, -w1, 0, z0, 0, 0, 0, 0, 1, combinedLight, combinedOverlay);
+        bladeVertex(builder, matrix, normalMatrix, 0, 0, z0 + z1, 1, 0, 0, 0, 1, combinedLight, combinedOverlay);
+        bladeVertex(builder, matrix, normalMatrix, 0, h0, z0 + z1, 1, v0, 0, 0, 1, combinedLight, combinedOverlay);
+        bladeVertex(builder, matrix, normalMatrix, 0, h0, z0 + z1, 1, v0, 0, 0, 1, combinedLight, combinedOverlay);
+
+        bladeVertex(builder, matrix, normalMatrix, -w1, 0, z0, 0, 0, 0, 0, 1, combinedLight, combinedOverlay);
+        bladeVertex(builder, matrix, normalMatrix, 0, h0, z0 + z1, 1, v0, 0, 0, 1, combinedLight, combinedOverlay);
+        bladeVertex(builder, matrix, normalMatrix, -w1 + w2, h, z0, u, v, 0, 0, 1, combinedLight, combinedOverlay);
+        bladeVertex(builder, matrix, normalMatrix, -w1 + w2, h, z0, u, v, 0, 0, 1, combinedLight, combinedOverlay);
+
+        bladeVertex(builder, matrix, normalMatrix, -w1, 0, z0, 0, 0, 0, 0, 1, combinedLight, combinedOverlay);
+        bladeVertex(builder, matrix, normalMatrix, -w1 + w2, h, z0, u, v, 0, 0, 1, combinedLight, combinedOverlay);
+        bladeVertex(builder, matrix, normalMatrix, -w1, h, z0, 0, v, 0, 0, 1, combinedLight, combinedOverlay);
+        bladeVertex(builder, matrix, normalMatrix, -w1, h, z0, 0, v, 0, 0, 1, combinedLight, combinedOverlay);
+
+        bladeVertex(builder, matrix, normalMatrix, -w1, 0, z0, 0, 0, 0, 0, -1, combinedLight, combinedOverlay);
+        bladeVertex(builder, matrix, normalMatrix, -w1, h, z0, 0, v, 0, 0, -1, combinedLight, combinedOverlay);
+        bladeVertex(builder, matrix, normalMatrix, -w1 + w2, h, z0, u, v, 0, 0, -1, combinedLight, combinedOverlay);
+        bladeVertex(builder, matrix, normalMatrix, -w1 + w2, h, z0, u, v, 0, 0, -1, combinedLight, combinedOverlay);
+
+        bladeVertex(builder, matrix, normalMatrix, -w1, 0, z0, 0, 0, 0, 0, -1, combinedLight, combinedOverlay);
+        bladeVertex(builder, matrix, normalMatrix, -w1 + w2, h, z0, u, v, 0, 0, -1, combinedLight, combinedOverlay);
+        bladeVertex(builder, matrix, normalMatrix, 0, h0, z0 - z1, 1, v0, 0, 0, -1, combinedLight, combinedOverlay);
+        bladeVertex(builder, matrix, normalMatrix, 0, h0, z0 - z1, 1, v0, 0, 0, -1, combinedLight, combinedOverlay);
+
+        bladeVertex(builder, matrix, normalMatrix, -w1, 0, z0, 0, 0, 0, 0, -1, combinedLight, combinedOverlay);
+        bladeVertex(builder, matrix, normalMatrix, 0, h0, z0 - z1, 1, v0, 0, 0, -1, combinedLight, combinedOverlay);
+        bladeVertex(builder, matrix, normalMatrix, 0, 0, z0 - z1, 1, 0, 0, 0, -1, combinedLight, combinedOverlay);
+        bladeVertex(builder, matrix, normalMatrix, 0, 0, z0 - z1, 1, 0, 0, 0, -1, combinedLight, combinedOverlay);
+
+        matrixStack.pop();
+    }
+
+    private void bladeVertex(IVertexBuilder builder, Matrix4f matrix, Matrix3f normalMatrix, double x, double y, double z, double u, double v, float nx, float ny, float nz, int light, int overlay) {
+        builder.pos(matrix, (float) x, (float) y, (float) z)
+            .color(255, 255, 255, 255)
+            .tex((float) u, (float) v)
+            .overlay(overlay)
+            .lightmap(light)
+            .normal(normalMatrix, nx, ny, nz)
+            .endVertex();
+    }
+
+    private void renderIris(StargateBaseTileEntity te, MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, float partialTicks, int combinedLightIn, int combinedOverlayIn) {
+        ResourceLocation irisTexture = new ResourceLocation(Constants.MOD_ID, "textures/tileentity/iris.png");
+
+        IVertexBuilder builder = bufferIn.getBuffer(RenderType.getEntityCutout(irisTexture));
 
         double phase = te.getLastIrisPhase() + (te.getIrisPhase() - te.getLastIrisPhase()) * partialTicks;
         double aperture = phase / 60.0;
         double a = 0.8 * aperture;
 
         for (int i = 0; i < numIrisBlades; i++) {
-            GlStateManager.pushMatrix();
-            GlStateManager.rotatef((float) (360.0 * i / numIrisBlades), 0, 0, 1);
-            renderIrisBlade(buffer, tessellator, a);
-            GlStateManager.popMatrix();
+            matrixStackIn.push();
+            matrixStackIn.rotate(Vector3f.ZP.rotationDegrees((float) (360.0 * i / numIrisBlades)));
+            renderIrisBlade(matrixStackIn, builder, a, combinedLightIn, combinedOverlayIn);
+            matrixStackIn.pop();
         }
     }
 
-    private void renderIrisBlade(BufferBuilder buffer, Tessellator tessellator, double a) {
-        double aa = a * 60, r = 2.31, w1 = 2.40, w2 = 1.85, h0 = 0.16, h1 = 1.00;
-        double h = h1 - (h1 - h0) * a * a;
-        double u = w2 / w1, v = h / h1, v0 = h0 / h1;
-        double z0 = 0.1, z1 = 0.01;
-
-        GlStateManager.pushMatrix();
-        GlStateManager.translated(r, 0, 0);
-        GlStateManager.rotatef((float) -aa, 0, 0, 1);
-
-        buffer.begin(6, DefaultVertexFormats.POSITION_TEX_NORMAL);
-        setNormal(0, 0, 1);
-        vertexUV(buffer, -w1, 0, z0, 0, 0);
-        vertexUV(buffer, 0, 0, z0 + z1, 1, 0);
-        vertexUV(buffer, 0, h0, z0 + z1, 1, v0);
-        vertexUV(buffer, -w1 + w2, h, z0, u, v);
-        vertexUV(buffer, -w1, h, z0, 0, v);
-        tessellator.draw();
-
-        buffer.begin(6, DefaultVertexFormats.POSITION_TEX_NORMAL);
-        vertexUV(buffer, -w1, 0, z0, 0, 0);
-        vertexUV(buffer, -w1, h, z0, 0, v);
-        vertexUV(buffer, -w1 + w2, h, z0, u, v);
-        vertexUV(buffer, 0, h0, z0 - z1, 1, v0);
-        vertexUV(buffer, 0, 0, z0 - z1, 1, 0);
-        tessellator.draw();
-
-        GlStateManager.popMatrix();
-    }
-
-    private void ehVertex(BufferBuilder buffer, double[][] grid, int i, int j, double rclip) {
+    private void ehVertex(IVertexBuilder builder, Matrix4f matrix, Matrix3f normalMatrix, double[][] grid, int i, int j, double rclip, int light, int overlay) {
         double r = i * ehBandWidth;
         double x = r * c[j];
         double y = r * s[j];
-
         double visualZ = grid[j][i] * 0.15;
-
-
         double z = ehClip(visualZ, r, rclip);
 
-        buffer.pos(x, y, z).tex(x, y).normal(0, 0, 1).endVertex();
+        float tiling = 3.0f;
+        float maxRadius = (float) (ehGridRadialSize * ehBandWidth);
+        float u = (float) (0.5 + (x / (maxRadius * 2.0)) * tiling);
+        float v = (float) (0.5 + (y / (maxRadius * 2.0)) * tiling);
+
+        builder.pos(matrix, (float) x, (float) y, (float) z)
+            .color(200, 225, 255, 255)
+            .tex(u, v)
+            .overlay(overlay)
+            .lightmap(light)
+            .normal(normalMatrix, 0, 0, 1)
+            .endVertex();
     }
 
     private double ehClip(double z, double r, double rclip) {
@@ -444,11 +573,29 @@ public class StargateBaseTileEntityRenderer extends TileEntityRenderer<StargateB
         this.nX = x; this.nY = y; this.nZ = z;
     }
 
-    private void vertex(BufferBuilder buffer, double x, double y, double z, double u, double v) {
-        buffer.pos(x, y, z).tex(u0 + u * textureScaleU, v0 + v * textureScaleV).normal(nX, nY, nZ).endVertex();
+    private void vertex(IVertexBuilder builder, Matrix4f matrix, Matrix3f normalMatrix, double x, double y, double z, double u, double v, int light, int overlay) {
+        float finalU = (float) (u0 + u * textureScaleU);
+        float finalV = (float) (v0 + v * textureScaleV);
+
+        builder.pos(matrix, (float) x, (float) y, (float) z)
+            .color(255, 255, 255, 255)
+            .tex(finalU, finalV)
+            .overlay(overlay)
+            .lightmap(light)
+            .normal(normalMatrix, nX, nY, nZ)
+            .endVertex();
     }
 
-    private void vertexUV(BufferBuilder buffer, double x, double y, double z, double u, double v) {
-        buffer.pos(x, y, z).tex(u, v).normal(nX, nY, nZ).endVertex();
+    private void vertex(IVertexBuilder builder, Matrix4f matrix, Matrix3f normalMatrix, double x, double y, double z, double u, double v, int r, int g, int b, int light, int overlay) {
+        float finalU = (float) (u0 + u * textureScaleU);
+        float finalV = (float) (v0 + v * textureScaleV);
+
+        builder.pos(matrix, (float) x, (float) y, (float) z)
+            .color(r, g, b, 255)
+            .tex(finalU, finalV)
+            .overlay(overlay)
+            .lightmap(light)
+            .normal(normalMatrix, nX, nY, nZ)
+            .endVertex();
     }
 }

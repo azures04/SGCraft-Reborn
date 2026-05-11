@@ -58,48 +58,45 @@ public class StargateBaseBlock extends Block implements ILiquidContainer, IBucke
     }
 
     @Override
-    public BlockRenderLayer getRenderLayer() {
-        return BlockRenderLayer.CUTOUT;
-    }
+    public ActionResultType onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit) {
+        if (worldIn.isRemote) {
+            return ActionResultType.SUCCESS;
+        }
 
-    @Override
-    public boolean onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand hand, BlockRayTraceResult rayTraceResult) {
-        if (worldIn.isRemote) return true;
         StargateBaseTileEntity base = (StargateBaseTileEntity) worldIn.getTileEntity(pos);
-
-        if (base != null) {;
+        if (base != null) {
             if (player.isSneaking()) {
-                if (player.getHeldItem(hand).getItem() == ModItems.STARGATE_CHEVRON_UPGRADE) {
+                if (player.getHeldItem(handIn).getItem() == ModItems.STARGATE_CHEVRON_UPGRADE) {
                     if (!base.hasChevronUpgrade()) {
                         base.setHasChevronUpgrade(true);
                         if (!player.isCreative()) {
-                            player.getHeldItem(hand).shrink(1);
-                            return true;
+                            player.getHeldItem(handIn).shrink(1);
+                            return ActionResultType.CONSUME;
                         }
                     }
                 }
-                if (player.getHeldItem(hand).getItem() == ModItems.STARGATE_IRIS_UPGRADE) {
+                if (player.getHeldItem(handIn).getItem() == ModItems.STARGATE_IRIS_UPGRADE) {
                     if (!base.hasIrisUpgrade()) {
                         base.setHasIrisUpgrade(true);
                         if (!player.isCreative()) {
-                            player.getHeldItem(hand).shrink(1);
-                            return true;
+                            player.getHeldItem(handIn).shrink(1);
+                            return ActionResultType.CONSUME;
                         }
                     }
                 }
-                if (player.getHeldItem(hand).getItem() == Items.WATER_BUCKET) {
-                    return true;
+                if (player.getHeldItem(handIn).getItem() == Items.WATER_BUCKET) {
+                    return ActionResultType.CONSUME;
                 }
             } else {
-                if (hand == Hand.MAIN_HAND) {
+                if (handIn == Hand.MAIN_HAND) {
                     if (base.isMerged()) {
                         NetworkHooks.openGui((ServerPlayerEntity) player, (INamedContainerProvider) base, pos);
-                        return true;
+                        return ActionResultType.SUCCESS;
                     }
                 }
             }
         }
-        return false;
+        return ActionResultType.CONSUME;
     }
 
     @Override

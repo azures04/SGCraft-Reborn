@@ -1,6 +1,8 @@
 package fr.azures04.sgcraftreborn.client.screens;
 
 import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
+import fr.azures04.sgcraftreborn.common.Constants;
 import fr.azures04.sgcraftreborn.common.network.StargateNetwork;
 import fr.azures04.sgcraftreborn.common.network.packets.StargateCloseVortexPacket;
 import fr.azures04.sgcraftreborn.common.network.packets.StargateDialPacket;
@@ -9,12 +11,11 @@ import fr.azures04.sgcraftreborn.common.registries.ModSounds;
 import fr.azures04.sgcraftreborn.common.registries.blocks.states.StargateControllerStatus;
 import fr.azures04.sgcraftreborn.common.registries.tiles.StargateControllerTileEntity;
 import fr.azures04.sgcraftreborn.common.util.math.ExtendedPos;
+import fr.azures04.sgcraftreborn.common.world.StargateAddressing;
 import net.minecraft.client.audio.SimpleSound;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ResourceLocation;
-import fr.azures04.sgcraftreborn.common.Constants;
-import fr.azures04.sgcraftreborn.common.world.StargateAddressing;
 import net.minecraft.util.text.ITextComponent;
 
 public class StargateControllerScreen extends Screen {
@@ -57,13 +58,13 @@ public class StargateControllerScreen extends Screen {
     protected void init() {
         super.init();
 
-        TileEntity base = minecraft.world.getTileEntity(controllerPos.getPos());
+        TileEntity base = this.minecraft.world.getTileEntity(controllerPos.getPos());
         if (base instanceof StargateControllerTileEntity) {
             this.enteredAddress = ((StargateControllerTileEntity) base).getDialingBuffer();
         }
 
-        if (minecraft != null && minecraft.mouseHelper != null) {
-            minecraft.mouseHelper.ungrabMouse();
+        if (this.minecraft != null && this.minecraft.mouseHelper != null) {
+            this.minecraft.mouseHelper.ungrabMouse();
         }
 
         this.dhdTop = this.height - dhdHeight;
@@ -75,37 +76,36 @@ public class StargateControllerScreen extends Screen {
     public void render(int mouseX, int mouseY, float partialTicks) {
         this.renderBackground();
 
-        GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F);
-        GlStateManager.enableBlend();
-        GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
-        GlStateManager.disableAlphaTest();
+        RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.disableAlphaTest();
 
-        minecraft.getTextureManager().bindTexture(GUI_TEXTURE);
+        this.minecraft.getTextureManager().bindTexture(GUI_TEXTURE);
         blit((this.width - dhdWidth) / 2, this.dhdTop, 0, 0, dhdWidth, dhdHeight, dhdWidth, dhdHeight);
 
         drawOrangeButton();
-
         drawEnteredSymbols();
         drawEnteredString();
 
-        GlStateManager.enableAlphaTest();
-        GlStateManager.disableBlend();
+        RenderSystem.enableAlphaTest();
+        RenderSystem.disableBlend();
 
         super.render(mouseX, mouseY, partialTicks);
     }
 
     private void drawOrangeButton() {
-        minecraft.getTextureManager().bindTexture(CENTRE_TEXTURE);
+        this.minecraft.getTextureManager().bindTexture(CENTRE_TEXTURE);
 
         switch (status) {
             case LINKED:
-                GlStateManager.color4f(0.5F, 0.25F, 0.0F, 1.0F);
+                RenderSystem.color4f(0.5F, 0.25F, 0.0F, 1.0F);
                 break;
             case ACTIVATED:
-                GlStateManager.color4f(1.0F, 0.5F, 0.0F, 1.0F);
+                RenderSystem.color4f(1.0F, 0.5F, 0.0F, 1.0F);
                 break;
             case UNLINKED:
-                GlStateManager.color4f(0.2F, 0.2F, 0.2F, 1.0F);
+                RenderSystem.color4f(0.2F, 0.2F, 0.2F, 1.0F);
                 break;
         }
 
@@ -115,21 +115,22 @@ public class StargateControllerScreen extends Screen {
         blit(dhdCentreX - (int)rx, dhdCentreY - (int)ry - 6, (int)(2 * rx), (int)(1.5 * ry), 64, 0, 64, 48, 128, 64);
 
         if (status == StargateControllerStatus.ACTIVATED) {
-            GlStateManager.blendFunc(GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ONE);
-            GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F); // Reset couleur pour la texture de lueur
+            RenderSystem.blendFunc(GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ONE);
+            RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
 
             double d = 5;
             blit(dhdCentreX - (int)(rx + d), dhdCentreY - (int)(ry + d) - 6, (int)(2 * (rx + d)), (int)(ry + d), 0, 0, 64, 32, 128, 64);
             blit(dhdCentreX - (int)(rx + d), dhdCentreY - 6, (int)(2 * (rx + d)), (int)(0.5 * ry + d), 0, 32, 64, 32, 128, 64);
-            GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+            RenderSystem.defaultBlendFunc();
         }
 
-        GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F); // Reset final
+        RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
     }
+
     private void drawEnteredSymbols() {
         if (enteredAddress.isEmpty()) return;
 
-        minecraft.getTextureManager().bindTexture(SYMBOL_TEXTURE);
+        this.minecraft.getTextureManager().bindTexture(SYMBOL_TEXTURE);
 
         int x = this.width / 2;
         int y = this.dhdTop - 80;
@@ -199,7 +200,7 @@ public class StargateControllerScreen extends Screen {
 
     private void dhdButtonPressed(int id) {
         if (id == 0) {
-            minecraft.getSoundHandler().play(SimpleSound.master(ModSounds.DHD_DIAL, 1.0F));
+            this.minecraft.getSoundHandler().play(SimpleSound.master(ModSounds.DHD_DIAL, 1.0F));
             switch (status) {
                 case LINKED:
                     if (enteredAddress.length() == 7 || enteredAddress.length() == 9) {
@@ -221,7 +222,7 @@ public class StargateControllerScreen extends Screen {
     }
 
     private void buttonSound() {
-        minecraft.getSoundHandler().play(SimpleSound.master(ModSounds.DHD_PRESS, 1.0F));
+        this.minecraft.getSoundHandler().play(SimpleSound.master(ModSounds.DHD_PRESS, 1.0F));
     }
 
     @Override

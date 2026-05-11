@@ -22,7 +22,6 @@ public class ComputerCraftInterfaceBlock extends Block  {
         setDefaultState(this.stateContainer.getBaseState().with(FACING, Direction.NORTH));
     }
 
-
     @Override
     protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder) {
         builder.add(FACING);

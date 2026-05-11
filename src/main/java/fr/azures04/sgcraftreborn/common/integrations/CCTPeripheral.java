@@ -1,7 +1,7 @@
 package fr.azures04.sgcraftreborn.common.integrations;
 
-import dan200.computercraft.api.lua.ILuaContext;
 import dan200.computercraft.api.lua.LuaException;
+import dan200.computercraft.api.lua.LuaFunction;
 import dan200.computercraft.api.peripheral.IComputerAccess;
 import dan200.computercraft.api.peripheral.IPeripheral;
 import fr.azures04.sgcraftreborn.common.api.StargateAbstractAPI;
@@ -15,20 +15,6 @@ public class CCTPeripheral extends StargateAbstractAPI implements IPeripheral {
 
     private final List<IComputerAccess> connectedComputers = new ArrayList<>();
 
-    private final String[] METHOD_NAMES = new String[] {
-        "stargateState",
-        "energyAvailable",
-        "energyToDial",
-        "localAddress",
-        "remoteAddress",
-        "dial",
-        "disconnect",
-        "irisState",
-        "openIris",
-        "closeIris",
-        "sendMessage"
-    };
-
     public CCTPeripheral(StargateBaseTileEntity stargate) {
         super(stargate);
     }
@@ -39,68 +25,59 @@ public class CCTPeripheral extends StargateAbstractAPI implements IPeripheral {
         return "stargate";
     }
 
-    @Nonnull
-    @Override
-    public String[] getMethodNames() {
-        return METHOD_NAMES;
+    @LuaFunction
+    public final Object[] stargateState() {
+        return super.getStargateState();
     }
 
-    @Nullable
-    @Override
-    public Object[] callMethod(@Nonnull IComputerAccess computer, @Nonnull ILuaContext context, int method, @Nonnull Object[] args) throws LuaException, InterruptedException {
-        switch (method) {
-            case 0:
-                return super.getStargateState();
-            case 1:
-                return context.executeMainThreadTask(super::getEnergyAvailable);
-            case 2:
-                if (args.length < 1 || !(args[0] instanceof String)) {
-                    throw new LuaException("Expected string argument for address");
-                }
-                return context.executeMainThreadTask(() -> super.getEnergyToDial((String) args[0]));
-            case 3:
-                return super.getLocalAddress();
-            case 4:
-                return super.getRemoteAddress();
-            case 5:
-                if (args.length < 1 || !(args[0] instanceof String)) {
-                    throw new LuaException("Expected string argument for address");
-                }
-                final String addressToDial = (String) args[0];
-                return context.executeMainThreadTask(() -> {
-                    super.dial(addressToDial);
-                    return null;
-                });
-            case 6:
-                return context.executeMainThreadTask(() -> {
-                    super.disconnect();
-                    return null;
-                });
-            case 7:
-                return super.getIrisState();
-            case 8:
-                return context.executeMainThreadTask(() -> {
-                    super.openIris();
-                    return null;
-                });
-            case 9:
-                return context.executeMainThreadTask(() -> {
-                    super.closeIris();
-                    return null;
-                });
-            case 10:
-                return context.executeMainThreadTask(() -> {
-                    super.sendMessage(args);
-                    return null;
-                });
-            default:
-                throw new LuaException("Invalid method index");
-        }
+    @LuaFunction
+    public final Object[] energyAvailable() {
+        return super.getEnergyAvailable();
     }
 
-    @Override
-    public boolean equals(@Nullable IPeripheral other) {
-        return this == other;
+    @LuaFunction
+    public final Object[] energyToDial(String address) throws LuaException {
+        return super.getEnergyToDial(address);
+    }
+
+    @LuaFunction
+    public final Object[] localAddress() {
+        return super.getLocalAddress();
+    }
+
+    @LuaFunction
+    public final Object[] remoteAddress() {
+        return super.getRemoteAddress();
+    }
+
+    @LuaFunction
+    public final Object[] irisState() {
+        return super.getIrisState();
+    }
+
+    @LuaFunction(mainThread = true)
+    public final void dial(String address) {
+        super.dial(address);
+    }
+
+    @LuaFunction(mainThread = true)
+    public final void disconnect() {
+        super.disconnect();
+    }
+
+    @LuaFunction(mainThread = true)
+    public final void openIris() {
+        super.openIris();
+    }
+
+    @LuaFunction(mainThread = true)
+    public final void closeIris() {
+        super.closeIris();
+    }
+
+    @LuaFunction(mainThread = true)
+    public final void sendMessage(Object[] args) {
+        super.sendMessage(args);
     }
 
     @Override
@@ -127,4 +104,8 @@ public class CCTPeripheral extends StargateAbstractAPI implements IPeripheral {
         }
     }
 
+    @Override
+    public boolean equals(@Nullable IPeripheral other) {
+        return this == other;
+    }
 }

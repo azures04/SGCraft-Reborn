@@ -1,9 +1,9 @@
 package fr.azures04.sgcraftreborn;
 
+import fr.azures04.sgcraftreborn.client.SGCraftRebornClient;
 import fr.azures04.sgcraftreborn.common.Constants;
 import fr.azures04.sgcraftreborn.common.config.SGCraftRebornConfig;
 import fr.azures04.sgcraftreborn.common.config.conditions.CraftingConditions;
-import fr.azures04.sgcraftreborn.common.integrations.Integrations;
 import fr.azures04.sgcraftreborn.common.network.StargateNetwork;
 import fr.azures04.sgcraftreborn.common.registries.ModRegistry;
 import net.minecraftforge.api.distmarker.Dist;
@@ -27,7 +27,7 @@ public class SGCraftReborn {
         FMLJavaModLoadingContext.get().getModEventBus().addListener(this::setup);
         FMLJavaModLoadingContext.get().getModEventBus().register(ModRegistry.class);
 
-        DistExecutor.runWhenOn(Dist.CLIENT, () -> () -> fr.azures04.sgcraftreborn.client.SGCraftRebornClient.init());
+        DistExecutor.safeRunWhenOn(Dist.CLIENT, () -> SGCraftRebornClient::init);
 
         MinecraftForge.EVENT_BUS.register(this);
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, SGCraftRebornConfig.SPEC);
@@ -35,9 +35,6 @@ public class SGCraftReborn {
     }
 
     private void setup(final FMLCommonSetupEvent event) {
-        DeferredWorkQueue.runLater(() -> {
-            StargateNetwork.registerPackets();
-        });
-        Integrations.setup();
+        DistExecutor.safeRunWhenOn(Dist.CLIENT, () -> StargateNetwork::registerPackets);
     }
 }

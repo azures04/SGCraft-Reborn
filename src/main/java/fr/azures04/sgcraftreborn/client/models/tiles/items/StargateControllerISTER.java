@@ -1,9 +1,11 @@
 package fr.azures04.sgcraftreborn.client.models.tiles.items;
 
+import com.mojang.blaze3d.matrix.MatrixStack;
 import fr.azures04.sgcraftreborn.common.Constants;
 import fr.azures04.sgcraftreborn.client.models.esmeg.ESMEGLoader;
 import fr.azures04.sgcraftreborn.client.models.esmeg.ESMEGModel;
 import fr.azures04.sgcraftreborn.client.models.esmeg.ESMEGRenderer;
+import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.tileentity.ItemStackTileEntityRenderer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Direction;
@@ -18,7 +20,8 @@ public class StargateControllerISTER extends ItemStackTileEntityRenderer {
     }
 
     @Override
-    public void renderByItem(ItemStack stack) {
-        ESMEGRenderer.renderWithRotation(model, 0, 0, 0, Direction.NORTH);
+    public void render(ItemStack itemStackIn, MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int combinedLightIn, int combinedOverlayIn) {
+        ESMEGRenderer.renderWithRotation(this.model, matrixStackIn, bufferIn, combinedLightIn, combinedOverlayIn, Direction.NORTH);
     }
+
 }

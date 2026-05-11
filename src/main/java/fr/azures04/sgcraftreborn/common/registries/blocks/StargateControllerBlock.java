@@ -24,6 +24,7 @@ import net.minecraft.state.EnumProperty;
 import net.minecraft.state.StateContainer;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.ActionResultType;
 import net.minecraft.util.Direction;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
@@ -80,15 +81,19 @@ public class StargateControllerBlock extends Block implements ISpecialItemRender
     }
 
     @Override
-    public boolean onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand hand, BlockRayTraceResult rayTraceResult) {
-        Direction side = rayTraceResult.getFace();
+    public ActionResultType onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit) {
+        Direction side = hit.getFace();
         if (worldIn.isRemote && side == Direction.UP) {
 
             StargateControllerTileEntity controller = (StargateControllerTileEntity) worldIn.getTileEntity(pos);
-            if (controller == null || !controller.isLinked()) return true;
+            if (controller == null || !controller.isLinked()) {
+                return ActionResultType.SUCCESS;
+            }
 
             ExtendedPos linkedPos = controller.getLinkedStargate();
-            if (linkedPos == null) return true;
+            if (linkedPos == null) {
+                return ActionResultType.SUCCESS;
+            }
 
             TileEntity baseTe = worldIn.getTileEntity(linkedPos);
             boolean hasChevron = (baseTe instanceof StargateBaseTileEntity) && ((StargateBaseTileEntity) baseTe).hasChevronUpgrade();
@@ -98,7 +103,7 @@ public class StargateControllerBlock extends Block implements ISpecialItemRender
                 StargateControllerStatus status = state.get(STATUS);
                 fr.azures04.sgcraftreborn.client.registries.ModScreens.open("controller_main", exPos, status, hasChevron);
             });
-            return true;
+            return ActionResultType.SUCCESS;
         } else {
             if (!worldIn.isRemote) {
                 Direction blockFacing = state.get(FACING);
@@ -106,11 +111,11 @@ public class StargateControllerBlock extends Block implements ISpecialItemRender
                     TileEntity controller = worldIn.getTileEntity(pos);
                     if (controller instanceof StargateControllerTileEntity) {
                         NetworkHooks.openGui((ServerPlayerEntity) player, (INamedContainerProvider) controller, pos);
-                        return true;
+                        return ActionResultType.SUCCESS;
                     }
                 }
             }
-            return true;
+            return ActionResultType.SUCCESS;
         }
     }
 
@@ -189,8 +194,4 @@ public class StargateControllerBlock extends Block implements ISpecialItemRender
         return fr.azures04.sgcraftreborn.client.models.tiles.items.StargateControllerISTER::new;
     }
 
-    @Override
-    public boolean isSolid(BlockState p_200124_1_) {
-        return false;
-    }
 }

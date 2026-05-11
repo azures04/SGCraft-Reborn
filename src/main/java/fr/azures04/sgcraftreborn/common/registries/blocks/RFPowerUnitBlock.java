@@ -7,6 +7,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.container.INamedContainerProvider;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.ActionResultType;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
@@ -34,14 +35,14 @@ public class RFPowerUnitBlock extends Block  {
     }
 
     @Override
-    public boolean onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand hand, BlockRayTraceResult rayTraceResult) {
+    public ActionResultType onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit) {
         if (worldIn.isRemote) {
-            return true;
+            return ActionResultType.SUCCESS;
         }
         TileEntity powerUnit = worldIn.getTileEntity(pos);
         if (powerUnit instanceof RFPowerUnitTileEntity) {
             NetworkHooks.openGui((ServerPlayerEntity) player, (INamedContainerProvider) powerUnit, pos);
         }
-        return true;
+        return ActionResultType.SUCCESS;
     }
 }

@@ -28,7 +28,7 @@ public class ModRegistry {
         for (Block block : ModBlocks.BLOCKS_TO_REGISTER) {
             Item.Properties properties = new Item.Properties().group(ModItemGroups.SGCRAFT_REBORN);
             if (block instanceof ISpecialItemRenderer) {
-                properties = properties.setTEISR(((ISpecialItemRenderer) block)::getISTER);
+                properties = properties.setISTER(((ISpecialItemRenderer) block)::getISTER);
             }
             BlockItem blockItem = new BlockItem(block, properties);
             blockItem.setRegistryName(block.getRegistryName());

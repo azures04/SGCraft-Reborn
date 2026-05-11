@@ -10,11 +10,10 @@ import net.minecraft.inventory.container.INamedContainerProvider;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.play.server.SUpdateTileEntityPacket;
-import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityType;
 import net.minecraft.util.Direction;
-import net.minecraft.util.text.ITextComponent;;
+import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
@@ -38,13 +37,14 @@ public class RFPowerUnitTileEntity extends TileEntity implements INamedContainer
 
         @Override
         public int extractEnergy(int maxExtract, boolean simulate) {
-            int received = super.receiveEnergy(maxReceive, simulate);
-            if (received > 0 && !simulate) {
+            int extracted = super.extractEnergy(maxExtract, simulate);
+            if (extracted > 0 && !simulate) {
                 markDirty();
             }
-            return received;
+            return extracted;
         }
     };
+
     private final LazyOptional<EnergyStorage> energyHolder = LazyOptional.of(() -> energyStorage);
     private int lastEnergy = 0;
     private static final double FE_PER_SGPU = 80.0;

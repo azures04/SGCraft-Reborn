@@ -12,17 +12,20 @@ apply plugin: "net.minecraftforge.gradle"
 apply plugin: "eclipse"
 apply plugin: "maven-publish"
 
-version = "1.14.4-0.0.3-beta"
+version = "1.15.2-0.0.1-beta"
 group = "fr.azures04.sgcraftreborn"
 archivesBaseName = "sgcraftreborn"
 
 sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = "1.8"
+println("Java: " + System.getProperty("java.version") + " JVM: " + System.getProperty("java.vm.version") + "(" + System.getProperty("java.vendor") + ") Arch: " + System.getProperty("os.arch"))
 
 minecraft {
-    mappings channel: "stable", version: "58-1.14.4"
+    mappings channel: "snapshot", version: "20210925-1.15.1"
+
     runs {
         client {
             workingDirectory project.file("run/client")
+
             property "forge.logging.markers", "SCAN,REGISTRIES,REGISTRYDUMP"
             property "forge.logging.console.level", "debug"
 
@@ -35,9 +38,9 @@ minecraft {
 
         server {
             workingDirectory project.file("run/server")
+            
             property "forge.logging.markers", "SCAN,REGISTRIES,REGISTRYDUMP"
             property "forge.logging.console.level", "debug"
-            args "nogui"
 
             mods {
                 sgcraftreborn {
@@ -47,10 +50,11 @@ minecraft {
         }
 
         data {
-            workingDirectory project.file("run")
-
+            workingDirectory project.file("run/data")
+            
             property "forge.logging.markers", "SCAN,REGISTRIES,REGISTRYDUMP"
             property "forge.logging.console.level", "debug"
+
             args "--mod", "sgcraftreborn", "--all", "--output", file("src/generated/resources/")
 
             mods {
@@ -70,34 +74,30 @@ repositories {
 }
 
 dependencies {
-    minecraft "net.minecraftforge:forge:1.14.4-28.2.28"
-    compileOnly "curse.maven:cctweaked-282001:2992882"
+    minecraft "net.minecraftforge:forge:1.15.2-31.2.60"
+    compileOnly "curse.maven:cctweaked-282001:3408526"
 }
 
 jar {
     manifest {
         attributes([
-            "Specification-Title": "SGCraftReborn",
-            "Specification-Vendor": "sgcraftreborn",
+            "Specification-Title": "sgcraftreborn",
+            "Specification-Vendor": "Azures04",
             "Specification-Version": "1",
             "Implementation-Title": project.name,
             "Implementation-Version": "${version}",
-            "Implementation-Vendor" :"sgcraftreborn",
+            "Implementation-Vendor" :"Azures04",
             "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
         ])
     }
 }
 
-def reobfFile = file("$buildDir/reobfJar/output.jar")
-def reobfArtifact = artifacts.add("default", reobfFile) {
-    type "jar"
-    builtBy "reobfJar"
-}
+jar.finalizedBy("reobfJar")
 
 publishing {
     publications {
         mavenJava(MavenPublication) {
-            artifact reobfArtifact
+            artifact jar
         }
     }
     repositories {
