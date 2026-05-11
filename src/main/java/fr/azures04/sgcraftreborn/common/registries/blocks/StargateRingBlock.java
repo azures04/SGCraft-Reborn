@@ -1,10 +1,7 @@
 package fr.azures04.sgcraftreborn.common.registries.blocks;
 
 import fr.azures04.sgcraftreborn.common.registries.structures.StargateStructure;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.IBucketPickupHandler;
-import net.minecraft.block.ILiquidContainer;
+import net.minecraft.block.*;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.fluid.IFluidState;
@@ -12,12 +9,13 @@ import net.minecraft.item.BlockItemUseContext;
 import net.minecraft.state.BooleanProperty;
 import net.minecraft.state.StateContainer;
 import net.minecraft.state.properties.BlockStateProperties;
+import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
 
-public class StargateRingBlock extends Block implements ILiquidContainer, IBucketPickupHandler {
+public class StargateRingBlock extends Block implements IWaterLoggable {
 
     public static final BooleanProperty INVISIBLE = BooleanProperty.create("invisible");
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
@@ -47,9 +45,10 @@ public class StargateRingBlock extends Block implements ILiquidContainer, IBucke
 
     @Override
     public BlockState getStateForPlacement(BlockItemUseContext context) {
+        IFluidState fluidState = context.getWorld().getFluidState(context.getPos());
         return this.getDefaultState()
             .with(INVISIBLE, false)
-            .with(WATERLOGGED, false);
+            .with(WATERLOGGED, fluidState.getFluid() == Fluids.WATER);
     }
 
     @Override
@@ -109,4 +108,18 @@ public class StargateRingBlock extends Block implements ILiquidContainer, IBucke
         }
         return false;
     }
+
+    @Override
+    public IFluidState getFluidState(BlockState state) {
+        return state.get(WATERLOGGED) ? Fluids.WATER.getStillFluidState(false) : super.getFluidState(state);
+    }
+
+    @Override
+    public BlockState updatePostPlacement(BlockState stateIn, Direction facing, BlockState facingState, IWorld worldIn, BlockPos currentPos, BlockPos facingPos) {
+        if (stateIn.get(WATERLOGGED)) {
+            worldIn.getPendingFluidTicks().scheduleTick(currentPos, Fluids.WATER, Fluids.WATER.getTickRate(worldIn));
+        }
+        return super.updatePostPlacement(stateIn, facing, facingState, worldIn, currentPos, facingPos);
+    }
+
 }

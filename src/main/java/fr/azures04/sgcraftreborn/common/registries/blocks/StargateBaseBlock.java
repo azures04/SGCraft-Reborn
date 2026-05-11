@@ -150,10 +150,11 @@ public class StargateBaseBlock extends Block implements ILiquidContainer, IBucke
 
     @Override
     public BlockState getStateForPlacement(BlockItemUseContext context) {
+        IFluidState fluidState = context.getWorld().getFluidState(context.getPos());
         return this.getDefaultState()
             .with(FACING, context.getPlacementHorizontalFacing().getOpposite())
             .with(INVISIBLE, false)
-            .with(WATERLOGGED, false);
+            .with(WATERLOGGED, fluidState.getFluid() == Fluids.WATER);
     }
 
     @Override
@@ -238,4 +239,18 @@ public class StargateBaseBlock extends Block implements ILiquidContainer, IBucke
         }
         return false;
     }
+
+    @Override
+    public IFluidState getFluidState(BlockState state) {
+        return state.get(WATERLOGGED) ? Fluids.WATER.getStillFluidState(false) : super.getFluidState(state);
+    }
+
+    @Override
+    public BlockState updatePostPlacement(BlockState stateIn, Direction facing, BlockState facingState, IWorld worldIn, BlockPos currentPos, BlockPos facingPos) {
+        if (stateIn.get(WATERLOGGED)) {
+            worldIn.getPendingFluidTicks().scheduleTick(currentPos, Fluids.WATER, Fluids.WATER.getTickRate(worldIn));
+        }
+        return super.updatePostPlacement(stateIn, facing, facingState, worldIn, currentPos, facingPos);
+    }
+
 }
