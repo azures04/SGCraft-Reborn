@@ -32,29 +32,28 @@ public class WorldGenHandler {
         }
 
         IWorld world = event.getWorld();
-        if (world instanceof World && ((World) world).isRemote) {
+        if (world == null || (world instanceof World && ((World) world).isRemote)) {
             return;
         }
 
         CompoundNBT nbt = event.getData();
+        if (nbt == null) return;
+
         if (!nbt.getBoolean("sgcraft_naquadah_generated")) {
             nbt.putBoolean("sgcraft_naquadah_generated", true);
-            PENDING_RETRO_GEN.add(event.getChunk().getPos());
+            if (event.getChunk() != null) {
+                PENDING_RETRO_GEN.add(event.getChunk().getPos());
+            }
         }
-    }
-
-    @SubscribeEvent
-    public static void onChunkSave(ChunkDataEvent.Save event) {
-
     }
 
     @SubscribeEvent
     public static void onWorldTick(TickEvent.WorldTickEvent event) {
-        if (event.phase == TickEvent.Phase.START || PENDING_RETRO_GEN.isEmpty()) {
+        if (event.phase == TickEvent.Phase.START || event.world.isRemote || PENDING_RETRO_GEN.isEmpty()) {
             return;
         }
 
-        if (event.world.isRemote || !(event.world instanceof ServerWorld)) {
+        if (!(event.world instanceof ServerWorld)) {
             return;
         }
 
@@ -62,15 +61,18 @@ public class WorldGenHandler {
         int processed = 0;
         int maxPerTick = 3;
 
-        int size = PENDING_RETRO_GEN.size();
-        for (int i = 0; i < size && processed < maxPerTick; i++) {
+        int attempts = 0;
+        int maxAttempts = Math.min(PENDING_RETRO_GEN.size(), 10);
+
+        while (!PENDING_RETRO_GEN.isEmpty() && processed < maxPerTick && attempts < maxAttempts) {
+            attempts++;
             ChunkPos chunkPos = PENDING_RETRO_GEN.poll();
             if (chunkPos == null) break;
 
-            if (serverWorld.chunkExists(chunkPos.x, chunkPos.z)) {
+            if (serverWorld.getChunkProvider().isChunkLoaded(chunkPos)) {
                 IChunk chunk = serverWorld.getChunk(chunkPos.x, chunkPos.z, ChunkStatus.FULL, false);
                 if (chunk != null) {
-                    generateNaquadah(chunk, serverWorld);
+                    generateNaquadah(chunk);
                     processed++;
                     continue;
                 }
@@ -80,8 +82,8 @@ public class WorldGenHandler {
         }
     }
 
-    public static void generateNaquadah(IChunk chunk, IWorld world) {
-        if (world == null) return;
+    public static void generateNaquadah(IChunk chunk) {
+        if (chunk == null) return;
 
         Random random = new Random();
         ChunkPos chunkPos = chunk.getPos();
@@ -99,8 +101,8 @@ public class WorldGenHandler {
                 int z = chunkZ + random.nextInt(16);
 
                 BlockPos pos = new BlockPos(x, y, z);
-                if (world.getBlockState(pos).getBlock() == Blocks.STONE) {
-                    world.setBlockState(pos, ModBlocks.NAQUADAH_ORE.getDefaultState(), 2);
+                if (chunk.getBlockState(pos).getBlock() == Blocks.STONE) {
+                    chunk.setBlockState(pos, ModBlocks.NAQUADAH_ORE.getDefaultState(), false);
                 }
             }
         }
@@ -115,8 +117,8 @@ public class WorldGenHandler {
                 int z = chunkZ + random.nextInt(16);
 
                 BlockPos pos = new BlockPos(x, y, z);
-                if (world.getBlockState(pos).getBlock() == Blocks.STONE) {
-                    world.setBlockState(pos, ModBlocks.NAQUADAH_ORE.getDefaultState(), 2);
+                if (chunk.getBlockState(pos).getBlock() == Blocks.STONE) {
+                    chunk.setBlockState(pos, ModBlocks.NAQUADAH_ORE.getDefaultState(), false);
                 }
             }
         }

@@ -31,7 +31,7 @@ import org.apache.logging.log4j.Level;
 
 import javax.annotation.Nullable;
 
-public class StargateBaseBlock extends Block implements ILiquidContainer, IBucketPickupHandler {
+public class StargateBaseBlock extends Block implements IWaterLoggable {
 
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final BooleanProperty INVISIBLE = BooleanProperty.create("invisible");
@@ -212,6 +212,7 @@ public class StargateBaseBlock extends Block implements ILiquidContainer, IBucke
         return 0;
     }
 
+
     @Override
     public Fluid pickupFluid(IWorld worldIn, BlockPos pos, BlockState state) {
         if (state.get(WATERLOGGED)) {
@@ -240,5 +241,18 @@ public class StargateBaseBlock extends Block implements ILiquidContainer, IBucke
             return true;
         }
         return false;
+    }
+
+    @Override
+    public IFluidState getFluidState(BlockState state) {
+        return state.get(WATERLOGGED) ? Fluids.WATER.getStillFluidState(false) : super.getFluidState(state);
+    }
+
+    @Override
+    public BlockState updatePostPlacement(BlockState stateIn, Direction facing, BlockState facingState, IWorld worldIn, BlockPos currentPos, BlockPos facingPos) {
+        if (stateIn.get(WATERLOGGED)) {
+            worldIn.getPendingFluidTicks().scheduleTick(currentPos, Fluids.WATER, Fluids.WATER.getTickRate(worldIn));
+        }
+        return super.updatePostPlacement(stateIn, facing, facingState, worldIn, currentPos, facingPos);
     }
 }

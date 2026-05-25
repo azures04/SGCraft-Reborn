@@ -896,7 +896,10 @@ public class StargateBaseTileEntity extends TileEntity implements ITickableTileE
 
     @Override
     public AxisAlignedBB getRenderBoundingBox() {
-        return new AxisAlignedBB(pos).grow(3.0, 5.0, 8.0);
+        return new AxisAlignedBB(
+                pos.getX() - 5, pos.getY() - 5, pos.getZ() - 5,
+                pos.getX() + 6, pos.getY() + 6, pos.getZ() + 6
+        );
     }
 
     private void handleKawooshVaporization() {

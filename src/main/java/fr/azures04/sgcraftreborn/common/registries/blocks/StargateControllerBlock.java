@@ -38,7 +38,7 @@ import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.network.NetworkHooks;
 import net.minecraftforge.items.CapabilityItemHandler;
 
-public class StargateControllerBlock extends Block implements ISpecialItemRenderer, ILiquidContainer, IBucketPickupHandler {
+public class StargateControllerBlock extends Block implements ISpecialItemRenderer, IWaterLoggable {
 
     public static final DirectionProperty FACING  = BlockStateProperties.HORIZONTAL_FACING;
     public static final EnumProperty <StargateControllerStatus> STATUS = EnumProperty.create("status", StargateControllerStatus.class);;
@@ -154,6 +154,22 @@ public class StargateControllerBlock extends Block implements ISpecialItemRender
     }
 
     @Override
+    public BlockRenderType getRenderType(BlockState state) {
+        return BlockRenderType.ENTITYBLOCK_ANIMATED;
+    }
+
+    @Override
+    public Callable<ItemStackTileEntityRenderer> getISTER() {
+        return fr.azures04.sgcraftreborn.client.models.tiles.items.StargateControllerISTER::new;
+    }
+
+    @Override
+    public boolean isSolid(BlockState p_200124_1_) {
+        return false;
+    }
+
+
+    @Override
     public Fluid pickupFluid(IWorld worldIn, BlockPos pos, BlockState state) {
         if (state.get(WATERLOGGED)) {
             worldIn.setBlockState(pos, state.with(WATERLOGGED, false), 3);
@@ -169,7 +185,7 @@ public class StargateControllerBlock extends Block implements ISpecialItemRender
 
     @Override
     public boolean receiveFluid(IWorld worldIn, BlockPos pos, BlockState state, IFluidState fluidStateIn) {
-         if (!state.get(WATERLOGGED) && fluidStateIn.getFluid() == Fluids.WATER) {
+        if (!state.get(WATERLOGGED) && fluidStateIn.getFluid() == Fluids.WATER) {
             if (!worldIn.isRemote()) {
                 worldIn.setBlockState(pos, state.with(WATERLOGGED, true), 3);
                 worldIn.getPendingFluidTicks().scheduleTick(pos, fluidStateIn.getFluid(), fluidStateIn.getFluid().getTickRate(worldIn));
@@ -180,17 +196,15 @@ public class StargateControllerBlock extends Block implements ISpecialItemRender
     }
 
     @Override
-    public BlockRenderType getRenderType(BlockState state) {
-        return BlockRenderType.ENTITYBLOCK_ANIMATED;
+    public IFluidState getFluidState(BlockState state) {
+        return state.get(WATERLOGGED) ? Fluids.WATER.getStillFluidState(false) : super.getFluidState(state);
     }
 
     @Override
-    public Callable<ItemStackTileEntityRenderer> getISTER() {
-        return fr.azures04.sgcraftreborn.client.models.tiles.items.StargateControllerISTER::new;
-    }
-
-    @Override
-    public boolean isSolid(BlockState p_200124_1_) {
-        return false;
+    public BlockState updatePostPlacement(BlockState stateIn, Direction facing, BlockState facingState, IWorld worldIn, BlockPos currentPos, BlockPos facingPos) {
+        if (stateIn.get(WATERLOGGED)) {
+            worldIn.getPendingFluidTicks().scheduleTick(currentPos, Fluids.WATER, Fluids.WATER.getTickRate(worldIn));
+        }
+        return super.updatePostPlacement(stateIn, facing, facingState, worldIn, currentPos, facingPos);
     }
 }
